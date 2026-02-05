@@ -1,0 +1,13 @@
+# <tipo>: <descrição curta>
+#
+# Tipos:
+#   feat: Nova funcionalidade
+#   fix: Correção de bug
+#   docs: Alteração em documentação
+#   style: Formatação, espaços, ponto e vírgula (sem mudar lógica)
+#   refactor: Refatoração sem alterar comportamento
+#   test: Adição ou ajuste de testes
+#   chore: Tarefas de manutenção (build, deps, configs)
+#   perf: Melhoria de performance
+#   ci: Mudanças em CI/CD
+#   build: Alterações no processo de build
