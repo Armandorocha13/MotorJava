@@ -55,40 +55,17 @@ public class GuiApp extends JFrame {
         headerPanel.add(textHeader, BorderLayout.WEST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // --- ÁREA CENTRAL (Passos) ---
-        JPanel stepsPanel = new JPanel(new GridLayout(1, 2, 20, 0)); // 1 linha, 2 colunas, gap 20
+        // --- ÁREA CENTRAL (Ações) ---
+        JPanel stepsPanel = new JPanel(new GridLayout(1, 1, 0, 0)); // Apenas 1 coluna centralizada
         stepsPanel.setBackground(COR_FUNDO);
-        stepsPanel.setBorder(new EmptyBorder(10, 30, 20, 30));
+        stepsPanel.setBorder(new EmptyBorder(10, 100, 20, 100)); // Margens maiores para centralizar visualmente
 
-        // MÓDULO: Ingestão
-        JPanel cardIngestao = criarCardPasso(
-                "📡",
-                "Serviço de Monitoramento",
-                "Monitora a pasta de entrada, identifica arquivos, renomeia e move para a estrutura de pastas correta.",
-                "Iniciar Serviço",
-                COR_VERDE);
-        JButton btnIngestao = (JButton) cardIngestao.getClientProperty("btnAction");
-        btnIngestao.addActionListener(e -> {
-            btnIngestao.setEnabled(false);
-            btnIngestao.setText("Monitorando...");
-            btnIngestao.setBackground(COR_CARD.brighter());
-            executarAcao(() -> {
-                log("--- INICIANDO SERVIÇO DE MONITORAMENTO ---");
-                try {
-                    ServicoIngestao.iniciarMonitoramento();
-                } catch (Exception ex) {
-                    log("ERRO NO SERVIÇO: " + ex.getMessage());
-                    throw new RuntimeException(ex);
-                }
-            });
-        });
-
-        // MÓDULO: Carga (Stock Técnico)
+        // MÓDULO ÚNICO: Carga (Stock Técnico) - Foco total nesta funcionalidade
         JPanel cardCarga = criarCardPasso(
-                "💾",
-                "Carga de Stock Técnico",
-                "Lê o arquivo Excel e atualiza a base de dados SQL 'estoque_vivo_historico'. Pode ser executado independentemente.",
-                "Executar Carga Manual",
+                "🚀",
+                "Executar Carga de Stock",
+                "Lê o arquivo Excel e atualiza a base de dados SQL 'estoque_vivo_historico'.",
+                "INICIAR PROCESSO DE CARGA",
                 COR_DESTAQUE);
         JButton btnCarga = (JButton) cardCarga.getClientProperty("btnAction");
         btnCarga.addActionListener(e -> executarAcao(() -> {
@@ -98,7 +75,7 @@ public class GuiApp extends JFrame {
             File arquivoParaCarga = arquivoPadrao;
 
             if (!arquivoPadrao.exists()) {
-                log("⚠️ Arquivo padrão não encontrado no Desktop.");
+                log("⚠️ Arquivo padrão não encontrado: " + CAMINHO_ARQUIVO);
                 log("📂 Abrindo seletor de arquivos...");
 
                 JFileChooser fileChooser = new JFileChooser();
@@ -119,14 +96,18 @@ public class GuiApp extends JFrame {
             try {
                 log("⏳ Conectando ao banco e processando...");
                 ImportadorArquivo.executarCarga(arquivoParaCarga.getAbsolutePath());
-                log("✨ Processo de carga finalizado.");
+                log("✨ Processo de carga finalizado com sucesso!");
+                JOptionPane.showMessageDialog(GuiApp.this, "Carga finalizada com sucesso!", "Sucesso",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 log("❌ ERRO DURANTE A CARGA: " + ex.getMessage());
-                ex.printStackTrace(); // Vai pro console/log também
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(GuiApp.this, "Erro: " + ex.getMessage(), "Erro",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }));
 
-        stepsPanel.add(cardIngestao);
+        // Adiciona apenas o card de carga
         stepsPanel.add(cardCarga);
 
         // Wrapper para não esticar muito verticalmente
