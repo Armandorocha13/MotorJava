@@ -8,12 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import com.motorjava.config.DatabaseConfig;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -24,8 +18,6 @@ public class ServicoIngestao {
     // Sua pasta dedicada onde você salvará os arquivos tratados
     private static final String PASTA_TRATADOS = HOME + "/SIMULADO_PROJETO/Saida_Tratada";
     private static final String BASE_SISTEMA = HOME + "/SIMULADO_PROJETO/Sistema_Final/";
-
-
 
     // Mapa para associar Palavra-Chave -> Subpasta de Destino
     private static final Map<String, String> ROTAS = new HashMap<>();
@@ -112,57 +104,24 @@ public class ServicoIngestao {
             System.out.println("✅ SUCESSO: Movido para -> " + destino.getAbsolutePath());
 
             // 3. Processamento do conteúdo Excel e Envio para DB
-            processarExcelESalvarNoBanco(destino);
+            if (destino.getName().equalsIgnoreCase("stock_vivo_atual.xlsx")) {
+                System.out.println("🔄 Destino reconhecido como Stock Vivo. Iniciando Carga...");
+                try {
+                    ImportadorArquivo.executarCarga(destino.getAbsolutePath());
+                    System.out.println("✅ Carga automática finalizada com sucesso!");
+                } catch (Exception e) {
+                    System.err.println("❌ Erro ao executar carga automática: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("ℹ️ Arquivo movido, mas sem processamento de banco automático definido para: "
+                        + destino.getName());
+            }
 
             System.out.println("-------------------------------------------------");
 
         } catch (IOException e) {
             System.err.println("❌ Erro ao processar arquivo: " + e.getMessage());
-        }
-    }
-
-    private static void processarExcelESalvarNoBanco(File arquivoExcel) {
-        System.out.println("📊 Lendo conteúdo de: " + arquivoExcel.getName());
-
-        try (FileInputStream fis = new FileInputStream(arquivoExcel);
-                Workbook workbook = new XSSFWorkbook(fis);
-                Connection conn = DatabaseConfig.getConnection()) {
-
-            Sheet sheet = workbook.getSheetAt(0); // Lê a primeira aba
-            Iterator<Row> rowIterator = sheet.iterator();
-
-            // SQL Exemplo: Ajuste conforme sua tabela
-            String sql = "INSERT INTO dados_ingestao (coluna1, coluna2, origem) VALUES (?, ?, ?)";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            // Pular cabeçalho se houver
-            if (rowIterator.hasNext())
-                rowIterator.next();
-
-            int count = 0;
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-
-                // Exemplo de leitura de células (ajuste conforme seu Excel)
-                String celula1 = getCellValueAsString(row.getCell(0));
-                String celula2 = getCellValueAsString(row.getCell(1));
-
-                pstmt.setString(1, celula1);
-                pstmt.setString(2, celula2);
-                pstmt.setString(3, arquivoExcel.getName());
-
-                pstmt.addBatch();
-                count++;
-            }
-
-            pstmt.executeBatch();
-            System.out.println("🗄️ " + count + " linhas inseridas no banco de dados.");
-
-        } catch (IOException e) {
-            System.err.println("❌ Erro ao ler Excel: " + e.getMessage());
-        } catch (SQLException e) {
-            System.err.println("❌ Erro de Banco de Dados: " + e.getMessage());
-            System.err.println("💡 Dica: Verifique se o MySQL está rodando e se a tabela 'dados_ingestao' existe.");
         }
     }
 

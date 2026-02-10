@@ -7,6 +7,7 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -15,7 +16,7 @@ public class GuiApp extends JFrame {
     private JTextArea logArea;
     // Caminho do arquivo fixo
     private static final String CAMINHO_ARQUIVO = "C:\\Users\\user\\Desktop\\EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx";
-    
+
     // Cores do Tema
     private static final Color COR_FUNDO = new Color(18, 18, 18);
     private static final Color COR_CARD = new Color(30, 30, 30);
@@ -41,7 +42,7 @@ public class GuiApp extends JFrame {
         JLabel titleLabel = new JLabel("VIVO AGING AUTOMATE");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(COR_DESTAQUE);
-        
+
         JLabel subtitleLabel = new JLabel("Motor de Processamento de Dados");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitleLabel.setForeground(COR_SUBTEXTO);
@@ -54,57 +55,85 @@ public class GuiApp extends JFrame {
         headerPanel.add(textHeader, BorderLayout.WEST);
         add(headerPanel, BorderLayout.NORTH);
 
-
         // --- ÁREA CENTRAL (Passos) ---
         JPanel stepsPanel = new JPanel(new GridLayout(1, 2, 20, 0)); // 1 linha, 2 colunas, gap 20
         stepsPanel.setBackground(COR_FUNDO);
         stepsPanel.setBorder(new EmptyBorder(10, 30, 20, 30));
 
-        // PASSO 01: Ingestão
-        JPanel cardStep1 = criarCardPasso(
-            "01", 
-            "Serviço de Ingestão", 
-            "Monitora a pasta de entrada, identifica arquivos, renomeia e move para a estrutura de pastas correta.",
-            "Iniciar Serviço",
-            COR_VERDE
-        );
-        JButton btnStep1 = (JButton) cardStep1.getClientProperty("btnAction");
-        btnStep1.addActionListener(e -> {
-            btnStep1.setEnabled(false);
-            btnStep1.setText("Serviço Rodando...");
-            btnStep1.setBackground(COR_CARD.brighter());
+        // MÓDULO: Ingestão
+        JPanel cardIngestao = criarCardPasso(
+                "📡",
+                "Serviço de Monitoramento",
+                "Monitora a pasta de entrada, identifica arquivos, renomeia e move para a estrutura de pastas correta.",
+                "Iniciar Serviço",
+                COR_VERDE);
+        JButton btnIngestao = (JButton) cardIngestao.getClientProperty("btnAction");
+        btnIngestao.addActionListener(e -> {
+            btnIngestao.setEnabled(false);
+            btnIngestao.setText("Monitorando...");
+            btnIngestao.setBackground(COR_CARD.brighter());
             executarAcao(() -> {
-                log("--- INICIANDO SERVIÇO DE INGESTÃO ---");
+                log("--- INICIANDO SERVIÇO DE MONITORAMENTO ---");
                 try {
                     ServicoIngestao.iniciarMonitoramento();
                 } catch (Exception ex) {
-                    throw new RuntimeException(ex); // Vai pro log
+                    log("ERRO NO SERVIÇO: " + ex.getMessage());
+                    throw new RuntimeException(ex);
                 }
             });
         });
 
-        // PASSO 02: Stock Técnico
-        JPanel cardStep2 = criarCardPasso(
-            "02", 
-            "Atualizar Stock Técnico", 
-            "Lê o arquivo Excel processado e atualiza a base de dados SQL 'estoque_vivo_historico'.",
-            "Executar Carga",
-            COR_DESTAQUE
-        );
-        JButton btnStep2 = (JButton) cardStep2.getClientProperty("btnAction");
-        btnStep2.addActionListener(e -> executarAcao(() -> {
-            log("--- INICIANDO CARGA DO STOCK TÉCNICO ---");
-            ImportadorArquivo.executarCarga(CAMINHO_ARQUIVO);
+        // MÓDULO: Carga (Stock Técnico)
+        JPanel cardCarga = criarCardPasso(
+                "💾",
+                "Carga de Stock Técnico",
+                "Lê o arquivo Excel e atualiza a base de dados SQL 'estoque_vivo_historico'. Pode ser executado independentemente.",
+                "Executar Carga Manual",
+                COR_DESTAQUE);
+        JButton btnCarga = (JButton) cardCarga.getClientProperty("btnAction");
+        btnCarga.addActionListener(e -> executarAcao(() -> {
+            log("--- PREPARANDO CARGA DO STOCK TÉCNICO ---");
+
+            File arquivoPadrao = new File(CAMINHO_ARQUIVO);
+            File arquivoParaCarga = arquivoPadrao;
+
+            if (!arquivoPadrao.exists()) {
+                log("⚠️ Arquivo padrão não encontrado no Desktop.");
+                log("📂 Abrindo seletor de arquivos...");
+
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Selecione o arquivo Excel para Carga");
+                int result = fileChooser.showOpenDialog(GuiApp.this);
+
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    arquivoParaCarga = fileChooser.getSelectedFile();
+                    log("✅ Arquivo selecionado: " + arquivoParaCarga.getName());
+                } else {
+                    log("❌ Carga cancelada pelo usuário.");
+                    return;
+                }
+            } else {
+                log("✅ Usando arquivo padrão: " + arquivoPadrao.getName());
+            }
+
+            try {
+                log("⏳ Conectando ao banco e processando...");
+                ImportadorArquivo.executarCarga(arquivoParaCarga.getAbsolutePath());
+                log("✨ Processo de carga finalizado.");
+            } catch (Exception ex) {
+                log("❌ ERRO DURANTE A CARGA: " + ex.getMessage());
+                ex.printStackTrace(); // Vai pro console/log também
+            }
         }));
 
-        stepsPanel.add(cardStep1);
-        stepsPanel.add(cardStep2);
+        stepsPanel.add(cardIngestao);
+        stepsPanel.add(cardCarga);
 
         // Wrapper para não esticar muito verticalmente
         JPanel centerWrapper = new JPanel(new BorderLayout());
         centerWrapper.setBackground(COR_FUNDO);
         centerWrapper.add(stepsPanel, BorderLayout.NORTH);
-        
+
         // --- ÁREA DE LOG ---
         logArea = new JTextArea();
         logArea.setEditable(false);
@@ -112,7 +141,7 @@ public class GuiApp extends JFrame {
         logArea.setForeground(new Color(0, 255, 127)); // Verde terminal
         logArea.setFont(new Font("Consolas", Font.PLAIN, 13));
         logArea.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
+
         JScrollPane scrollLog = new JScrollPane(logArea);
         scrollLog.setBorder(new LineBorder(new Color(40, 40, 40), 1));
         scrollLog.setPreferredSize(new Dimension(0, 250)); // Altura fixa para o log
@@ -121,12 +150,12 @@ public class GuiApp extends JFrame {
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.setBackground(COR_FUNDO);
         logPanel.setBorder(new EmptyBorder(0, 30, 20, 30));
-        
+
         JLabel logTitle = new JLabel("Output do Sistema");
         logTitle.setForeground(COR_SUBTEXTO);
         logTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         logTitle.setBorder(new EmptyBorder(0, 0, 5, 0));
-        
+
         logPanel.add(logTitle, BorderLayout.NORTH);
         logPanel.add(scrollLog, BorderLayout.CENTER);
 
@@ -142,12 +171,12 @@ public class GuiApp extends JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(COR_CARD);
         card.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
-        // Efeito de borda arredondada (simulado com line border por enquanto no Swing puro)
+
+        // Efeito de borda arredondada (simulado com line border por enquanto no Swing
+        // puro)
         card.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(new Color(50, 50, 50), 1, true),
-            new EmptyBorder(20, 20, 20, 20)
-        ));
+                new LineBorder(new Color(50, 50, 50), 1, true),
+                new EmptyBorder(20, 20, 20, 20)));
 
         JLabel numLabel = new JLabel(numero);
         numLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
@@ -179,14 +208,17 @@ public class GuiApp extends JFrame {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMaximumSize(new Dimension(500, 45));
-        
+
         // Hover effect simples
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
-                if(btn.isEnabled()) btn.setBackground(corBotao.brighter());
+                if (btn.isEnabled())
+                    btn.setBackground(corBotao.brighter());
             }
+
             public void mouseExited(MouseEvent evt) {
-                if(btn.isEnabled()) btn.setBackground(corBotao);
+                if (btn.isEnabled())
+                    btn.setBackground(corBotao);
             }
         });
 
@@ -226,10 +258,12 @@ public class GuiApp extends JFrame {
             public void write(int b) {
                 atualizarTexto(String.valueOf((char) b));
             }
+
             @Override
             public void write(byte[] b, int off, int len) {
                 atualizarTexto(new String(b, off, len));
             }
+
             private void atualizarTexto(String texto) {
                 SwingUtilities.invokeLater(() -> {
                     logArea.append(texto);
@@ -244,8 +278,9 @@ public class GuiApp extends JFrame {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
-        
+        } catch (Exception ignored) {
+        }
+
         SwingUtilities.invokeLater(() -> {
             GuiApp app = new GuiApp();
             app.setVisible(true);
