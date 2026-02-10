@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import com.motorjava.config.DatabaseConfig;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,10 +25,7 @@ public class ServicoIngestao {
     private static final String PASTA_TRATADOS = HOME + "/SIMULADO_PROJETO/Saida_Tratada";
     private static final String BASE_SISTEMA = HOME + "/SIMULADO_PROJETO/Sistema_Final/";
 
-    // Configurações de Banco de Dados (Exemplo MySQL)
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/meu_banco_dados";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "senha";
+
 
     // Mapa para associar Palavra-Chave -> Subpasta de Destino
     private static final Map<String, String> ROTAS = new HashMap<>();
@@ -128,7 +126,7 @@ public class ServicoIngestao {
 
         try (FileInputStream fis = new FileInputStream(arquivoExcel);
                 Workbook workbook = new XSSFWorkbook(fis);
-                Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+                Connection conn = DatabaseConfig.getConnection()) {
 
             Sheet sheet = workbook.getSheetAt(0); // Lê a primeira aba
             Iterator<Row> rowIterator = sheet.iterator();
