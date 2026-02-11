@@ -7,23 +7,33 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * CONFIGURAÇÃO DE BANCO DE DADOS
+ * ---------------------------------------------------------
+ * Classe utilitária para gerenciar a conexão com o MySQL.
+ * Ela lê as credenciais (url, usuário, senha) de um arquivo externo
+ * chamado 'database.properties', para não deixar senhas fixas no código.
+ */
 public class DatabaseConfig {
 
     private static final Properties properties = new Properties();
 
+    // Bloco estático: Roda uma vez assim que o programa inicia
     static {
         try (InputStream input = DatabaseConfig.class.getClassLoader().getResourceAsStream("database.properties")) {
             if (input == null) {
-                System.err.println("Erro: Não foi possível encontrar o arquivo database.properties");
+                System.err.println("❌ ERRO CRÍTICO: Arquivo 'database.properties' não encontrado na pasta resources!");
             } else {
-                properties.load(input);
+                properties.load(input); // Carrega as configurações do arquivo
+                System.out.println("🔧 Configuração de Banco de Dados carregada com sucesso.");
             }
         } catch (IOException ex) {
-            System.err.println("Erro ao carregar configurações do banco de dados: " + ex.getMessage());
+            System.err.println("❌ Erro ao ler configuração do banco: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
+    // Métodos para pegar os valores individuais
     public static String getUrl() {
         return properties.getProperty("db.url");
     }
@@ -36,6 +46,10 @@ public class DatabaseConfig {
         return properties.getProperty("db.password");
     }
 
+    /**
+     * Cria e retorna uma nova conexão com o banco de dados.
+     * Quem chamar este método deve usar try-with-resources para fechar a conexão depois.
+     */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(getUrl(), getUser(), getPassword());
     }

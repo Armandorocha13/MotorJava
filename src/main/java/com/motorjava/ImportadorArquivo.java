@@ -18,6 +18,11 @@ public class ImportadorArquivo {
         executarCarga(caminhoArquivo);
     }
 
+    /**
+     * MÉTODO DE CARGA
+     * Executa todo o processo de leitura e gravação.
+     * @param filePath Caminho completo do arquivo .xlsx
+     */
     public static void executarCarga(String filePath) {
         File arquivo = new File(filePath);
         if (!arquivo.exists()) {
@@ -25,23 +30,29 @@ public class ImportadorArquivo {
             return;
         }
 
-        // SQL com 33 interrogações + 1 para a data de hoje (Snapshot)
+        // --- PREPARAÇÃO DAS QUERIES ---
+        // Query de Insert com 33 interrogações (uma para cada coluna) + 1 data automática
         String sqlInsert = "INSERT INTO estoque_vivo_historico VALUES (" + "?,".repeat(33) + "CURRENT_DATE)";
+        
+        // Query para não duplicar dados do mesmo dia
         String sqlDeleteHoje = "DELETE FROM estoque_vivo_historico WHERE data_snapshot = CURRENT_DATE";
 
+        // --- INÍCIO DA CONEXÃO COM BANCO ---
         try (Connection conn = DatabaseConfig.getConnection()) {
-            conn.setAutoCommit(false); // Inicia transação
+            conn.setAutoCommit(false); // IMPORTANTE: Desliga o salvamento automático para fazer tudo de uma vez (Transaction)
 
-            // 1. Limpa dados de hoje se já existirem
+            // 1. LIMPEZA PRÉVIA
+            // Remove dados se já rodou hoje, para evitar duplicidade
             try (Statement st = conn.createStatement()) {
                 st.execute(sqlDeleteHoje);
+                System.out.println("🧹 Limpeza realizada: Dados de hoje removidos para nova carga.");
             }
 
             System.out.println("Iniciando leitura do Excel: " + filePath);
 
-            // 2. Lê o arquivo Excel (.xlsx)
+            // 2. LEITURA DO ARQUIVO EXCEL
             try (FileInputStream fis = new FileInputStream(new File(filePath));
-                    Workbook workbook = new XSSFWorkbook(fis)) {
+                 Workbook workbook = new XSSFWorkbook(fis)) { // XSSFWorkbook é para arquivos .xlsx novos
 
                 // Pega a aba chamada "DADOS"
                 Sheet sheet = workbook.getSheet("DADOS");
@@ -55,7 +66,7 @@ public class ImportadorArquivo {
                 int contador = 0;
                 int linhasIgnoradas = 0;
 
-                // Itera sobre as linhas
+                // 3. ITERAÇÃO SOBRE AS LINHAS
                 for (Row row : sheet) {
                     // Pula o cabeçalho (linha 0)
                     if (row.getRowNum() == 0)
@@ -73,15 +84,15 @@ public class ImportadorArquivo {
                         String valor = getCellValueAsString(cell);
 
                         if (valor == null || valor.isEmpty()) {
-                            ps.setNull(i + 1, Types.VARCHAR);
+                            ps.setNull(i + 1, Types.VARCHAR); // Se vazio, manda NULL pro banco
                         } else {
                             ps.setString(i + 1, valor);
                         }
                     }
 
-                    ps.addBatch();
+                    ps.addBatch(); // Adiciona no pacote de envio
 
-                    // Executa a cada 1000 linhas
+                    // Executa a cada 1000 linhas para não "entupir" a memória
                     if (++contador % 1000 == 0) {
                         ps.executeBatch();
                         System.out.println("Processadas " + contador + " linhas...");
@@ -89,11 +100,14 @@ public class ImportadorArquivo {
                 }
 
                 ps.executeBatch(); // Insere o restante
-                conn.commit(); // Grava tudo
-                System.out.println("Carga finalizada! Total: " + contador + " registros inseridos.");
+                
+                // 4. FINALIZAÇÃO
+                conn.commit(); // CONFIRMA A GRAVAÇÃO NO BANCO (Se der erro antes, nada é salvo)
+                System.out.println("✅ Carga finalizada! Total: " + contador + " registros inseridos.");
 
             } catch (Exception e) {
-                conn.rollback();
+                conn.rollback(); // Se der erro no Excel, cancela tudo no banco
+                System.err.println("❌ Falha na leitura do Excel. Transação desfeita.");
                 throw e;
             }
 
@@ -103,7 +117,10 @@ public class ImportadorArquivo {
         }
     }
 
-    // Método auxiliar para converter qualquer célula em String
+    /**
+     * Converte qualquer tipo de célula (Texto, Número, Booleano) para String
+     * Isso evita erros de "Cannot get a STRING value from a NUMERIC cell"
+     */
     private static String getCellValueAsString(Cell cell) {
         if (cell == null)
             return "";

@@ -1,266 +1,307 @@
 package com.motorjava;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
+/**
+ * CLASSE PRINCIPAL: INTERFACE GRÁFICA (DASHBOARD)
+ * ---------------------------------------------------------
+ * Esta classe é responsável por criar a interface visual que o usuário vê.
+ * Ela serve como um "Painel de Controle" para o Motor de Ingestão.
+ *
+ * Funcionalidades:
+ * 1. Exibe o status atual do serviço (Parado, Monitorando, Processando).
+ * 2. Mostra uma barra de progresso visual.
+ * 3. Exibe logs filtrados e coloridos para facilitar o entendimento.
+ * 4. Permite iniciar o processo de monitoramento com um clique.
+ *
+ * Autor: Equipe de Desenvolvimento
+ * Versão: 4.0 - Dashboard Clean
+ */
 public class GuiApp extends JFrame {
 
-    private JTextArea logArea;
-    // Caminho do arquivo fixo
-    private static final String CAMINHO_ARQUIVO = "C:\\Users\\user\\Desktop\\EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx";
+    // Componentes da Interface (Janela, Textos, Barra de Progresso)
+    private JTextPane logArea;      // Área onde os logs aparecem
+    private JProgressBar progressBar; // Barra de progresso
+    private JLabel statusLabel;     // Texto de status (ex: "Aguardando...")
+    private StyledDocument doc;     // Documento para estilizar os logs (cores)
 
-    // Cores do Tema
+    // --- CORES DO TEMA (Modo Escuro Moderno) ---
     private static final Color COR_FUNDO = new Color(18, 18, 18);
-    private static final Color COR_CARD = new Color(30, 30, 30);
+    private static final Color COR_PAINEL = new Color(28, 28, 28);
     private static final Color COR_DESTAQUE = new Color(138, 43, 226); // Roxo Vivo
-    private static final Color COR_TEXTO = new Color(240, 240, 240);
-    private static final Color COR_SUBTEXTO = new Color(170, 170, 170);
-    private static final Color COR_VERDE = new Color(34, 139, 34);
+    private static final Color COR_TEXTO_PRINCIPAL = new Color(255, 255, 255);
+    private static final Color COR_TEXTO_SECUNDARIO = new Color(170, 170, 170);
+    private static final Color COR_VERDE = new Color(46, 204, 113);
+    private static final Color COR_VERMELHO = new Color(231, 76, 60);
+    private static final Color COR_AMARELO = new Color(241, 196, 15);
 
     public GuiApp() {
-        // Configuração da Janela
-        setTitle("Vivo Aging Automate v2.0");
-        setSize(900, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        // 1. CONFIGURAÇÃO DA JANELA PRINCIPAL
+        setTitle("Vivo Aging Automate v4.0 - Dashboard");
+        setSize(1000, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Fecha o programa ao fechar a janela
+        setLocationRelativeTo(null); // Centraliza na tela
         setLayout(new BorderLayout());
         getContentPane().setBackground(COR_FUNDO);
 
-        // --- CABEÇALHO ---
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(COR_FUNDO);
-        headerPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+        // 2. MONTAGEM DAS SEÇÕES DA TELA
+        configurarCabecalho();
+        configurarPainelCentral();
+        
+        // 3. REDIRECIONAMENTO DE LOGS
+        // Faz com que os System.out.println apareçam na tela do app, não só no terminal
+        redirecionarConsoleComFiltro();
+    }
 
-        JLabel titleLabel = new JLabel("VIVO AGING AUTOMATE");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setForeground(COR_DESTAQUE);
+    /**
+     * Configura a parte superior da tela (Título e Botão de Iniciar)
+     */
+    private void configurarCabecalho() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(COR_FUNDO);
+        header.setBorder(new EmptyBorder(25, 40, 25, 40));
 
-        JLabel subtitleLabel = new JLabel("Motor de Processamento de Dados");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitleLabel.setForeground(COR_SUBTEXTO);
+        // Títulos
+        JLabel title = new JLabel("VIVO AGING AUTOMATE");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setForeground(COR_DESTAQUE);
 
-        JPanel textHeader = new JPanel(new GridLayout(2, 1));
-        textHeader.setBackground(COR_FUNDO);
-        textHeader.add(titleLabel);
-        textHeader.add(subtitleLabel);
+        JLabel subtitle = new JLabel("Monitoramento & Ingestão Inteligente");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        subtitle.setForeground(COR_TEXTO_SECUNDARIO);
 
-        headerPanel.add(textHeader, BorderLayout.WEST);
-        add(headerPanel, BorderLayout.NORTH);
+        JPanel titleBlock = new JPanel(new GridLayout(2, 1));
+        titleBlock.setBackground(COR_FUNDO);
+        titleBlock.add(title);
+        titleBlock.add(subtitle);
 
-        // --- ÁREA CENTRAL (Ações) ---
-        JPanel stepsPanel = new JPanel(new GridLayout(1, 1, 0, 0)); // Apenas 1 coluna centralizada
-        stepsPanel.setBackground(COR_FUNDO);
-        stepsPanel.setBorder(new EmptyBorder(10, 100, 20, 100)); // Margens maiores para centralizar visualmente
+        // Botão de Start
+        JButton btnStart = new JButton("INICIAR SERVIÇO");
+        estilizarBotao(btnStart, COR_VERDE);
+        btnStart.setPreferredSize(new Dimension(180, 45));
+        
+        // Ação do Botão
+        btnStart.addActionListener(e -> {
+            btnStart.setEnabled(false); // Desativa para não clicar duas vezes
+            btnStart.setText("RODANDO...");
+            btnStart.setBackground(COR_PAINEL.brighter());
+            iniciarServico(); // Chama o método que inicia o motor
+        });
 
-        // MÓDULO ÚNICO: Carga (Stock Técnico) - Foco total nesta funcionalidade
-        JPanel cardCarga = criarCardPasso(
-                "🚀",
-                "Executar Carga de Stock",
-                "Lê o arquivo Excel e atualiza a base de dados SQL 'estoque_vivo_historico'.",
-                "INICIAR PROCESSO DE CARGA",
-                COR_DESTAQUE);
-        JButton btnCarga = (JButton) cardCarga.getClientProperty("btnAction");
-        btnCarga.addActionListener(e -> executarAcao(() -> {
-            log("--- PREPARANDO CARGA DO STOCK TÉCNICO ---");
+        header.add(titleBlock, BorderLayout.WEST);
+        header.add(btnStart, BorderLayout.EAST);
+        add(header, BorderLayout.NORTH);
+    }
 
-            File arquivoPadrao = new File(CAMINHO_ARQUIVO);
-            File arquivoParaCarga = arquivoPadrao;
+    /**
+     * Configura a área central com o Status e o Log
+     */
+    private void configurarPainelCentral() {
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(COR_FUNDO);
+        centerPanel.setBorder(new EmptyBorder(0, 40, 20, 40));
 
-            if (!arquivoPadrao.exists()) {
-                log("⚠️ Arquivo padrão não encontrado: " + CAMINHO_ARQUIVO);
-                log("📂 Abrindo seletor de arquivos...");
+        // --- PAINEL DE STATUS ---
+        JPanel statusCard = new JPanel(new BorderLayout());
+        statusCard.setBackground(COR_PAINEL);
+        statusCard.setBorder(new EmptyBorder(30, 30, 30, 30));
+        statusCard.setMaximumSize(new Dimension(2000, 150));
 
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setDialogTitle("Selecione o arquivo Excel para Carga");
-                int result = fileChooser.showOpenDialog(GuiApp.this);
+        statusLabel = new JLabel("Aguardando Início do Serviço...");
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        statusLabel.setForeground(COR_TEXTO_PRINCIPAL);
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    arquivoParaCarga = fileChooser.getSelectedFile();
-                    log("✅ Arquivo selecionado: " + arquivoParaCarga.getName());
-                } else {
-                    log("❌ Carga cancelada pelo usuário.");
-                    return;
-                }
-            } else {
-                log("✅ Usando arquivo padrão: " + arquivoPadrao.getName());
-            }
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(false); // Só ativa animação quando começar
+        progressBar.setBackground(COR_PAINEL);
+        progressBar.setForeground(COR_DESTAQUE);
+        progressBar.setBorderPainted(false);
+        progressBar.setPreferredSize(new Dimension(0, 8));
 
-            try {
-                log("⏳ Conectando ao banco e processando...");
-                ImportadorArquivo.executarCarga(arquivoParaCarga.getAbsolutePath());
-                log("✨ Processo de carga finalizado com sucesso!");
-                JOptionPane.showMessageDialog(GuiApp.this, "Carga finalizada com sucesso!", "Sucesso",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception ex) {
-                log("❌ ERRO DURANTE A CARGA: " + ex.getMessage());
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(GuiApp.this, "Erro: " + ex.getMessage(), "Erro",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        }));
+        statusCard.add(statusLabel, BorderLayout.CENTER);
+        statusCard.add(progressBar, BorderLayout.SOUTH);
 
-        // Adiciona apenas o card de carga
-        stepsPanel.add(cardCarga);
+        centerPanel.add(statusCard);
 
-        // Wrapper para não esticar muito verticalmente
-        JPanel centerWrapper = new JPanel(new BorderLayout());
-        centerWrapper.setBackground(COR_FUNDO);
-        centerWrapper.add(stepsPanel, BorderLayout.NORTH);
-
-        // --- ÁREA DE LOG ---
-        logArea = new JTextArea();
-        logArea.setEditable(false);
-        logArea.setBackground(new Color(12, 12, 12));
-        logArea.setForeground(new Color(0, 255, 127)); // Verde terminal
-        logArea.setFont(new Font("Consolas", Font.PLAIN, 13));
-        logArea.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JScrollPane scrollLog = new JScrollPane(logArea);
-        scrollLog.setBorder(new LineBorder(new Color(40, 40, 40), 1));
-        scrollLog.setPreferredSize(new Dimension(0, 250)); // Altura fixa para o log
-
-        // Adiciona título "LOG DO SISTEMA" acima do scroll
+        // --- PAINEL DE LOGS ---
         JPanel logPanel = new JPanel(new BorderLayout());
-        logPanel.setBackground(COR_FUNDO);
-        logPanel.setBorder(new EmptyBorder(0, 30, 20, 30));
+        logPanel.setBackground(COR_PAINEL);
+        logPanel.setBorder(new EmptyBorder(25, 0, 0, 0));
 
-        JLabel logTitle = new JLabel("Output do Sistema");
-        logTitle.setForeground(COR_SUBTEXTO);
-        logTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        logTitle.setBorder(new EmptyBorder(0, 0, 5, 0));
+        JLabel logTitle = new JLabel("  Histórico de Eventos Relevantes");
+        logTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        logTitle.setForeground(COR_TEXTO_SECUNDARIO);
+        logTitle.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        logArea = new JTextPane();
+        logArea.setEditable(false); // Usuário não pode editar o log
+        logArea.setBackground(COR_PAINEL);
+        logArea.setForeground(COR_TEXTO_PRINCIPAL);
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        doc = logArea.getStyledDocument();
+
+        JScrollPane scrollLog = new JScrollPane(logArea); // Adiciona barra de rolagem
+        scrollLog.setBorder(null);
+        scrollLog.setPreferredSize(new Dimension(0, 200));
 
         logPanel.add(logTitle, BorderLayout.NORTH);
         logPanel.add(scrollLog, BorderLayout.CENTER);
 
-        centerWrapper.add(logPanel, BorderLayout.CENTER);
-        add(centerWrapper, BorderLayout.CENTER);
-
-        // Redireciona System.out
-        redirecionarConsole();
+        centerPanel.add(logPanel);
+        add(centerPanel, BorderLayout.CENTER);
     }
 
-    private JPanel criarCardPasso(String numero, String titulo, String descricao, String textoBotao, Color corBotao) {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(COR_CARD);
-        card.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        // Efeito de borda arredondada (simulado com line border por enquanto no Swing
-        // puro)
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(50, 50, 50), 1, true),
-                new EmptyBorder(20, 20, 20, 20)));
-
-        JLabel numLabel = new JLabel(numero);
-        numLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
-        numLabel.setForeground(new Color(60, 60, 60));
-        numLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel titleLabel = new JLabel(titulo);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(COR_TEXTO);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JTextArea descLabel = new JTextArea(descricao);
-        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        descLabel.setForeground(COR_SUBTEXTO);
-        descLabel.setBackground(COR_CARD);
-        descLabel.setWrapStyleWord(true);
-        descLabel.setLineWrap(true);
-        descLabel.setEditable(false);
-        descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        descLabel.setMaximumSize(new Dimension(400, 60));
-
-        // Botão Moderno
-        JButton btn = new JButton(textoBotao);
+    /**
+     * Aplica estilo visual aos botões
+     */
+    private void estilizarBotao(JButton btn, Color cor) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setBackground(corBotao);
+        btn.setBackground(cor);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(500, 45));
-
-        // Hover effect simples
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent evt) {
-                if (btn.isEnabled())
-                    btn.setBackground(corBotao.brighter());
-            }
-
-            public void mouseExited(MouseEvent evt) {
-                if (btn.isEnabled())
-                    btn.setBackground(corBotao);
-            }
-        });
-
-        card.add(numLabel);
-        card.add(Box.createRigidArea(new Dimension(0, 10)));
-        card.add(titleLabel);
-        card.add(Box.createRigidArea(new Dimension(0, 5)));
-        card.add(descLabel);
-        card.add(Box.createVerticalGlue()); // Empurra o botão pra baixo se tiver espaço extra
-        card.add(Box.createRigidArea(new Dimension(0, 20)));
-        card.add(btn);
-
-        // Hack para retornar o botão e poder adicionar listener depois
-        card.putClientProperty("btnAction", btn);
-
-        return card;
     }
 
-    private void executarAcao(Runnable acao) {
+    /**
+     * Inicia o Monitoramento em uma nova Thread para não travar a interface visual
+     */
+    private void iniciarServico() {
         new Thread(() -> {
+            addLog("Serviço Iniciado. Monitorando Downloads...", COR_TEXTO_SECUNDARIO);
+            setStatus("Monitorando pasta de Downloads...", false);
+            
             try {
-                acao.run();
+                // Chama a lógica pesada que fica no ServicoIngestao
+                ServicoIngestao.iniciarMonitoramento();
             } catch (Exception e) {
-                e.printStackTrace();
-                log("ERRO: " + e.getMessage());
+                setStatus("Erro Fatal no Serviço", false);
+                addLog("ERRO: " + e.getMessage(), COR_VERMELHO);
             }
         }).start();
     }
 
-    private void log(String msg) {
-        SwingUtilities.invokeLater(() -> logArea.append(msg + "\n"));
+    // --- MÉTODOS AUXILIARES: Atualizam a tela de forma segura ---
+
+    private void setStatus(String msg, boolean carregando) {
+        SwingUtilities.invokeLater(() -> {
+            statusLabel.setText(msg);
+            progressBar.setIndeterminate(carregando);
+            if (!carregando) progressBar.setValue(0);
+        });
     }
 
-    private void redirecionarConsole() {
+    private void addLog(String text, Color color) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                SimpleAttributeSet keyWord = new SimpleAttributeSet();
+                StyleConstants.setForeground(keyWord, color);
+                
+                String time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                doc.insertString(doc.getLength(), "[" + time + "] " + text + "\n", keyWord);
+                logArea.setCaretPosition(doc.getLength()); // Rola automatimanete para o fim
+            } catch (BadLocationException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    // --- FILTRO DE LOGS ---
+    // Captura tudo que o programa imprime (System.out) e decide o que mostrar na tenla
+    private void redirecionarConsoleComFiltro() {
         OutputStream out = new OutputStream() {
+            private StringBuilder buffer = new StringBuilder();
+
             @Override
             public void write(int b) {
-                atualizarTexto(String.valueOf((char) b));
+                if (b == '\n') {
+                    processarLinha(buffer.toString());
+                    buffer.setLength(0);
+                } else {
+                    buffer.append((char) b);
+                }
             }
 
             @Override
             public void write(byte[] b, int off, int len) {
-                atualizarTexto(new String(b, off, len));
-            }
-
-            private void atualizarTexto(String texto) {
-                SwingUtilities.invokeLater(() -> {
-                    logArea.append(texto);
-                    logArea.setCaretPosition(logArea.getDocument().getLength());
-                });
+                String s = new String(b, off, len);
+                for (char c : s.toCharArray()) {
+                    if (c == '\n') {
+                        processarLinha(buffer.toString());
+                        buffer.setLength(0);
+                    } else {
+                        buffer.append(c);
+                    }
+                }
             }
         };
         System.setOut(new PrintStream(out, true));
         System.setErr(new PrintStream(out, true));
     }
 
+    /**
+     * Analisa cada linha de log e decide:
+     * 1. Se deve ser mostrada na tela.
+     * 2. Qual cor usar.
+     * 3. Se deve atualizar o Status principal.
+     */
+    private void processarLinha(String linha) {
+        linha = linha.trim();
+        if (linha.isEmpty()) return;
+
+        // EVENTOS POSITIVOS
+        if (linha.contains("🆕 Detetado")) {
+            setStatus("Arquivo Detectado! Iniciando Triagem...", true);
+            addLog(linha, COR_AMARELO);
+        } 
+        else if (linha.contains("PASSO 1")) {
+            setStatus("Padronizando e Renomeando Arquivo...", true);
+            addLog("Iniciando Ingestão e Padronização", COR_TEXTO_PRINCIPAL);
+        }
+        else if (linha.contains("PASSO 2")) {
+            setStatus("Importando dados para o Banco...", true);
+            addLog("Iniciando Carga no Bando de Dados", COR_TEXTO_PRINCIPAL);
+        }
+        else if (linha.contains("✅ Carga automática finalizada") || linha.contains("Ciclo de processamento concluído")) {
+            setStatus("Processo Concluído com Sucesso!", false);
+            addLog("SUCESSO: Ciclo Finalizado.", COR_VERDE);
+            SwingUtilities.invokeLater(() -> {
+                progressBar.setValue(100);
+                // Espera 3 segundos e volta a monitorar
+                Timer timer = new Timer(3000, e -> {
+                    setStatus("Aguardando novos arquivos...", false);
+                    progressBar.setValue(0);
+                });
+                timer.setRepeats(false);
+                timer.start();
+            });
+        }
+        // EVENTOS DE ERRO
+        else if (linha.contains("❌") || linha.contains("ERRO") || linha.contains("Exception")) {
+            setStatus("Erro no Processamento", false);
+            addLog(linha, COR_VERMELHO);
+        }
+        // OUTROS EVENTOS RELEVANTES
+        else if (linha.contains("✅") || linha.contains("movido")) {
+            addLog(linha, COR_VERDE);
+        }
+        // O resto é ignorado para manter a tela limpa
+    }
+
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         SwingUtilities.invokeLater(() -> {
             GuiApp app = new GuiApp();
