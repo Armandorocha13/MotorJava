@@ -22,7 +22,7 @@ public class ImportadorForcaTrabalho {
         }
 
         // SQL para inserir ou atualizar (UPSERT)
-        String sqlUpsert = "INSERT INTO forca_trabalho " +
+        String sqlUpsert = "INSERT INTO forca_sp " +
                 "(sap, colaborador, sexo, funcao, coordenador, supervisor, contato, observacao, status) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +

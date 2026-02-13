@@ -150,7 +150,7 @@ public class GuiApp extends JFrame {
     }
 
     private JPanel criarPainelAcoes() {
-        JPanel painel = new JPanel(new GridLayout(1, 2, 25, 0));
+        JPanel painel = new JPanel(new GridLayout(1, 3, 20, 0));
         painel.setBackground(BG_PRIMARY);
         painel.setBorder(new EmptyBorder(10, 0, 10, 0));
 
@@ -168,8 +168,16 @@ public class GuiApp extends JFrame {
         );
         btnImport.addActionListener(e -> executarImportacao());
 
+        ModernButton btnForca = new ModernButton(
+            "Atualizar Força SP",
+            "Atualiza cadastro de técnicos da força de trabalho (executar 1x por semana)",
+            "👥"
+        );
+        btnForca.addActionListener(e -> atualizarForcaTrabalho());
+
         painel.add(btnMonitor);
         painel.add(btnImport);
+        painel.add(btnForca);
 
         return painel;
     }
@@ -262,6 +270,34 @@ public class GuiApp extends JFrame {
                 mostrarErro("Falha na importação: " + ex.getMessage());
             } finally {
                 SwingUtilities.invokeLater(() -> btnImport.setEnabled(true));
+            }
+        }).start();
+    }
+
+    private void atualizarForcaTrabalho() {
+        String caminhoArquivo = "C:\\Users\\user\\Documents\\RELATORIOS\\VIVO\\Força VIVO SP.xlsx";
+        
+        new Thread(() -> {
+            try {
+                File arquivo = new File(caminhoArquivo);
+                if (!arquivo.exists()) {
+                    mostrarErro("Arquivo não encontrado: " + caminhoArquivo);
+                    return;
+                }
+
+                atualizarStatus("Atualizando Força de Trabalho...", true, ACCENT_BLUE);
+                
+                ImportadorForcaTrabalho.executarCarga(caminhoArquivo);
+                
+                mostrarSucesso("Força de Trabalho atualizada com sucesso!");
+                
+            } catch (Exception ex) {
+                mostrarErro("Falha ao atualizar força: " + ex.getMessage());
+                ex.printStackTrace();
+            } finally {
+                SwingUtilities.invokeLater(() -> {
+                    atualizarStatus("Sistema Pronto", false, SUCCESS);
+                });
             }
         }).start();
     }
