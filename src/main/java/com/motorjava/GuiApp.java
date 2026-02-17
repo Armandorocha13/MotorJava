@@ -35,7 +35,7 @@ public class GuiApp extends JFrame {
     private JLabel statusLabel;
     private JProgressBar progressBar;
     private JTextArea logArea;
-    private ModernButton btnMonitor, btnImport;
+    private ModernButton btnImport;
     private JPanel statusIndicator;
     
     private static final String PASTA_STOCK = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\Equipamentos serializados";
@@ -150,36 +150,58 @@ public class GuiApp extends JFrame {
     }
 
     private JPanel criarPainelAcoes() {
-        JPanel painel = new JPanel(new GridLayout(1, 3, 20, 0));
+        JPanel painel = new JPanel(new GridLayout(1, 2, 20, 0));
         painel.setBackground(BG_PRIMARY);
-        painel.setBorder(new EmptyBorder(10, 0, 10, 0));
+        // Ajustando margem para acomodar dois botões
+        painel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        btnMonitor = new ModernButton(
-            "Monitorar Downloads",
-            "Detecta automaticamente novos arquivos e os organiza na pasta de processamento",
-            "📡"
+        ModernButton btnAtualizar = new ModernButton(
+            "ATUALIZAR PLANILHA",
+            "Executa script para atualizar os dados do Excel antes da importação",
+            "🔄"
         );
-        btnMonitor.addActionListener(e -> iniciarMonitoramento());
+        btnAtualizar.addActionListener(e -> executarAtualizacaoExcel());
 
         btnImport = new ModernButton(
-            "Importar Dados",
-            "Processa o arquivo mais recente e importa os dados para o banco de dados",
-            "💾"
+            "IMPORTAR DADOS",
+            "Lê o arquivo da pasta 'Equipamentos', processa e salva na tabela 'equipamentos_serializados'",
+            "🚀"
         );
         btnImport.addActionListener(e -> executarImportacao());
 
-        ModernButton btnForca = new ModernButton(
-            "Atualizar Força SP",
-            "Atualiza cadastro de técnicos da força de trabalho (executar 1x por semana)",
-            "👥"
-        );
-        btnForca.addActionListener(e -> atualizarForcaTrabalho());
-
-        painel.add(btnMonitor);
+        painel.add(btnAtualizar);
         painel.add(btnImport);
-        painel.add(btnForca);
 
         return painel;
+    }
+
+    private void executarAtualizacaoExcel() {
+        atualizarStatus("Executando script de atualização...", true, WARNING);
+        
+        new Thread(() -> {
+            try {
+                String caminhoScript = "C:\\Users\\user\\Desktop\\atualizar_dados.vbs";
+                File script = new File(caminhoScript);
+                
+                if (!script.exists()) {
+                    mostrarErro("Script não encontrado: " + caminhoScript);
+                    return;
+                }
+
+                Process p = Runtime.getRuntime().exec("wscript \"" + caminhoScript + "\"");
+                int exitCode = p.waitFor();
+                
+                if (exitCode == 0) {
+                    mostrarSucesso("Planilha atualizada com sucesso!");
+                } else {
+                    mostrarErro("Script terminou com código: " + exitCode);
+                }
+                
+            } catch (Exception ex) {
+                mostrarErro("Falha ao executar script: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        }).start();
     }
 
     private JPanel criarPainelLog() {
@@ -225,19 +247,8 @@ public class GuiApp extends JFrame {
     }
 
     // ========== AÇÕES ==========
-    private void iniciarMonitoramento() {
-        btnMonitor.setEnabled(false);
-        atualizarStatus("Monitorando Downloads...", true, WARNING);
-        
-        new Thread(() -> {
-            try {
-                ServicoIngestao.iniciarMonitoramento();
-            } catch (Exception ex) {
-                mostrarErro("Falha no monitoramento: " + ex.getMessage());
-                SwingUtilities.invokeLater(() -> btnMonitor.setEnabled(true));
-            }
-        }).start();
-    }
+    // ========== AÇÕES ==========
+
 
     private void executarImportacao() {
         btnImport.setEnabled(false);
@@ -247,22 +258,32 @@ public class GuiApp extends JFrame {
             try {
                 File pasta = new File(PASTA_STOCK);
                 if (!pasta.exists() || !pasta.isDirectory()) {
-                    mostrarErro("Pasta não encontrada");
+                    mostrarErro("Pasta não encontrada: " + PASTA_STOCK);
                     return;
                 }
 
-                File[] arquivos = pasta.listFiles((d, name) -> name.matches("\\d{3}\\..*"));
-                if (arquivos == null || arquivos.length == 0) {
-                    mostrarAviso("Nenhum arquivo encontrado. Execute o monitoramento primeiro.");
-                    return;
-                }
-
-                Arrays.sort(arquivos, (f1, f2) -> f2.getName().compareTo(f1.getName()));
-                File arquivo = arquivos[0];
-
-                atualizarStatus("Processando " + arquivo.getName() + "...", true, ACCENT_BLUE);
+                // 1. Tenta buscar o arquivo com nome específico
+                File arquivoAlvo = new File(pasta, "EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx");
                 
-                ImportadorArquivo.executarCarga(arquivo.getAbsolutePath());
+                if (!arquivoAlvo.exists()) {
+                    // 2. Se não achar, busca qualquer .xlsx ou .csv (pega o mais recente)
+                    File[] arquivos = pasta.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") || name.toLowerCase().endsWith(".csv"));
+                    
+                    if (arquivos == null || arquivos.length == 0) {
+                        mostrarErro("Nenhum arquivo encontrado em: " + pasta.getName());
+                        return;
+                    }
+                    
+                    // Ordena por data de modificação (mais recente primeiro)
+                    Arrays.sort(arquivos, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
+                    arquivoAlvo = arquivos[0];
+                    
+                    mostrarAviso("Arquivo padrão não encontrado. Usando: " + arquivoAlvo.getName());
+                }
+
+                atualizarStatus("Processando " + arquivoAlvo.getName() + "...", true, ACCENT_BLUE);
+                
+                ImportadorArquivo.executarCarga(arquivoAlvo.getAbsolutePath());
                 
                 mostrarSucesso("Importação concluída com sucesso!");
                 
@@ -274,33 +295,7 @@ public class GuiApp extends JFrame {
         }).start();
     }
 
-    private void atualizarForcaTrabalho() {
-        String caminhoArquivo = "C:\\Users\\user\\Documents\\RELATORIOS\\VIVO\\Força VIVO SP.xlsx";
-        
-        new Thread(() -> {
-            try {
-                File arquivo = new File(caminhoArquivo);
-                if (!arquivo.exists()) {
-                    mostrarErro("Arquivo não encontrado: " + caminhoArquivo);
-                    return;
-                }
 
-                atualizarStatus("Atualizando Força de Trabalho...", true, ACCENT_BLUE);
-                
-                ImportadorForcaTrabalho.executarCarga(caminhoArquivo);
-                
-                mostrarSucesso("Força de Trabalho atualizada com sucesso!");
-                
-            } catch (Exception ex) {
-                mostrarErro("Falha ao atualizar força: " + ex.getMessage());
-                ex.printStackTrace();
-            } finally {
-                SwingUtilities.invokeLater(() -> {
-                    atualizarStatus("Sistema Pronto", false, SUCCESS);
-                });
-            }
-        }).start();
-    }
 
     // ========== FEEDBACK VISUAL ==========
     private void atualizarStatus(String msg, boolean loading, Color cor) {

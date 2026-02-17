@@ -77,64 +77,77 @@ public class ImportadorArquivo {
     }
 
     private static void processarEtl(Connection conn) throws SQLException {
-        // Limpa tabela final
-        try (Statement st = conn.createStatement()) {
-            st.execute("TRUNCATE TABLE estock_tecnico");
-        }
+            // PASSO 1: Carga Bruta (Stage -> estock_tecnico)
+            try (Statement st = conn.createStatement()) {
+                st.execute("TRUNCATE TABLE estock_tecnico");
+            }
+            
+            String sqlBruto = 
+                "INSERT INTO estock_tecnico (" +
+                "nome_da_origem, id_do_tecnico, nome_do_tecnico, centro_fisico_do_tecnico, origem_centro_materiais, " +
+                "origem_pool_centro_materiais, sku, descricao_sku, descricao_estado, numero_de_serie, " +
+                "quantidade, id_grupo, descricao_grupo, ultima_modificacao, companhia, " +
+                "status_do_tecnico, tecnologia_no_validados, origem_fisico_centro, motivo_de_indisponibilidade, wo, " +
+                "uf_do_tecnico, transferencia, devolucoes, id_regra, retirada_danificada, " +
+                "estado_blockchain" +
+                ") " +
+                "SELECT " +
+                "s.col01, " + // 1. Nome da Origem (Vem do arquivo)
+                "s.col02, s.col03, s.col04, s.col05, " + // 2-5
+                "s.col06, s.col07, s.col08, s.col09, s.col10, " + // 6-10
+                "s.col11, s.col12, " + // 11-12
+                "s.col13, s.col14, s.col15, " + // 13-15 (14=Ultima Modificacao)
+                "s.col16, s.col17, s.col18, s.col19, s.col20, " + // 16-20
+                "s.col21, s.col22, s.col23, s.col24, s.col25, " + // 21-25
+                "s.col26 " + // 26. Estado Blockchain
+                "FROM stage_stock_tecnico s";
+                
+            try (Statement st = conn.createStatement()) {
+                int linhas = st.executeUpdate(sqlBruto);
+                System.out.println("✅ [ETL] Dados brutos carregados em 'estock_tecnico': " + linhas + " linhas.");
+            }
 
-        // Monta a query de transferência com os mapeamentos e conversões
-        // NOTA: O mapeamento das colunas da Tabela Final (estock_tecnico) x Colunas da Stage (baseadas no Excel)
-        
-        // Mapeamento baseado no que validamos anteriormente:
-        // Tabela 1 (Fonte) <-- Stage col01
-        // Tabela 2 (ID) <-- Stage col02 (converter para INT)
-        // ...
-        // Tabela 16 (tecnologia) <-- Stage col17
-        // Tabela 28 (status) <-- Stage col29
-        
-        String sqlTransfer = 
-            "INSERT INTO estock_tecnico (" +
-            "Fonte_de_dados, id_tecnico, nome_do_tecnico, centro_fisico_tecnico, origem_centro_materiais, " + // 1-5
-            "origem_pool_centro_materiais, sku, descricao_sku, descricao_estado, numero_de_serie, " + // 6-10
-            "quantidade, id_grupo, descricao_grupo, ultima_modificacao, companhia, " + // 11-15
-            "tecnologia_no_validados, origem_centro_fisico, motivo_de_indisponibilidade, wo, uf_do_tecnico, " + // 16-20
-            "trasferencia, devolucoes, id_regra, retirada_danificada, estado_blockchain, " + // 21-25
-            "coodernador, supervisor, status, dias, gerente, " + // 26-30
-            "status_aging, expurgO" + // 31-32
-            ") " +
-            "SELECT " +
-            "'Importação Automática', " + // 1. Fonte
-            "s.col01, " + // 2. ID Técnico (Original com letras, agora que é VARCHAR)
-            "s.col02, s.col03, s.col04, " + // 3-5
-            "s.col05, s.col06, s.col07, s.col08, s.col09, " + // 6-10
-            "CAST(NULLIF(REGEXP_REPLACE(s.col10, '[^0-9]', ''), '') AS UNSIGNED), " + // 11. Qtd
-            "CAST(NULLIF(REGEXP_REPLACE(s.col11, '[^0-9]', ''), '') AS UNSIGNED), " + // 12. ID Grupo
-            "s.col12, s.col13, s.col14, " + // 13-15
-            
-            "s.col16, " + // 16. Tecnologia
-            "s.col17, " + // 17. Origem Físico
-            "s.col18, " + // 18. Motivo
-            "s.col19, " + // 19. WO
-            "s.col20, " + // 20. UF
-            "s.col21, s.col22, " + // 21-22
-            "CAST(NULLIF(REGEXP_REPLACE(s.col23, '[^0-9]', ''), '') AS UNSIGNED), " + // 23. ID Regra
-            "s.col24, s.col25, " + // 24-25 (Retirada, Blockchain)
-            
-            "f.coordenador, " + // 26. Coordenador (Vem da Força SP)
-            "f.supervisor, " + // 27. Supervisor (Vem da Força SP)
-            "f.status, " + // 28. Status (Vem da Força SP)
-            
-            "CAST(NULLIF(REGEXP_REPLACE(s.col29, '[^0-9]', ''), '') AS UNSIGNED), " + // 29. Dias (origem arquivo, se tiver)
-            "NULL, " + // 30. Gerente (Não tem na Força SP)
-            "NULL, " + // 31. Aging
-            "NULL " + // 32. Expurgo
-            "FROM stage_stock_tecnico s " +
-            "LEFT JOIN forca_sp f ON f.sap = REGEXP_REPLACE(s.col01, '[^0-9]', '')"; // Join pelo ID numérico
+            // PASSO 2: Enriquecimento (estock_tecnico -> equipamentos_serializados)
+            try (Statement st = conn.createStatement()) {
+                st.execute("TRUNCATE TABLE equipamentos_serializados");
+            }
 
-        try (Statement st = conn.createStatement()) {
-            int linhas = st.executeUpdate(sqlTransfer);
-            System.out.println("📊 Dados processados e transferidos: " + linhas + " registros.");
-        }
+            String sqlFinal = 
+                "INSERT INTO equipamentos_serializados (" +
+                // 25 Colunas Iniciais (iguais à estock_tecnico)
+                "nome_da_origem, id_do_tecnico, nome_do_tecnico, centro_fisico_do_tecnico, origem_centro_materiais, " +
+                "origem_pool_centro_materiais, sku, descricao_sku, descricao_estado, numero_de_serie, " +
+                "quantidade, id_grupo, descricao_grupo, ultima_modificacao, companhia, " +
+                "status_do_tecnico, tecnologia_no_validados, origem_fisico_centro, motivo_de_indisponibilidade, wo, " +
+                "uf_do_tecnico, transferencia, devolucoes, id_regra, retirada_danificada, " +
+                "estado_blockchain, " +
+                // 7 Colunas Calculadas
+                "coordenador, supervisor, status, dias, gerente, status_aging, expurgo" +
+                ") " +
+                "SELECT " +
+                "e.*, " + // Pega tudo da tabela bruta
+                // Enriquecimento com Força SP
+                "f.coordenador, " +
+                "f.supervisor, " +
+                "f.status, " +
+                // Cálculo de Dias
+                "DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')), " + 
+                "NULL, " + // Gerente
+                // Cálculo de Aging
+                "CASE " +
+                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) <= 6 THEN '0 a 6 dias' " +
+                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) BETWEEN 7 AND 14 THEN '7 a 14 dias' " +
+                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) > 14 THEN 'Acima de 14 dias' " +
+                "  ELSE 'Não classificado' " +
+                "END, " +
+                "NULL " + // Expurgo
+                "FROM estock_tecnico e " +
+                "LEFT JOIN forca_sp f ON f.sap = REGEXP_REPLACE(e.id_do_tecnico, '[^0-9]', '')";
+
+            try (Statement st = conn.createStatement()) {
+                int linhas = st.executeUpdate(sqlFinal);
+                System.out.println("✅ [ETL] Dados enriquecidos carregados em 'equipamentos_serializados': " + linhas + " linhas.");
+            }
     }
 
     private static boolean processarParaStage(File arquivo, Connection conn) {
