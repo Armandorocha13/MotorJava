@@ -47,37 +47,37 @@ SELECT '✅ Etapa 4/5: Índices criados' AS status;
 -- ETAPA 5: CRIAR VIEW PARA POWER BI (APENAS TÉCNICOS CADASTRADOS)
 CREATE OR REPLACE VIEW vw_powerbi_equipamentos AS
 SELECT 
-    e.numero_serie AS 'Número de Série',
-    e.nome_tecnico AS 'Nome do Técnico',
-    f.supervisor AS Supervisor,
-    f.coordenador AS Coordenador,
-    f.coordenador AS Gerente,
-    e.sku AS SKU,
-    e.descricao_sku AS 'Descrição',
-    e.status_tecnico AS 'Status Técnico',
-    e.dias_estoque AS 'Dias em Estoque',
-    e.status_aging AS 'Status Aging',
-    f.funcao AS 'Função',
-    f.sexo AS Sexo,
-    f.status AS 'Status Colaborador',
-    f.contato AS Contato,
-    f.sap AS SAP,
+    e.numero_serie AS numero_serie,
+    e.nome_tecnico AS nome_tecnico,
+    f.supervisor AS supervisor,
+    f.coordenador AS coordenador,
+    f.coordenador AS gerente,
+    e.sku AS sku,
+    e.descricao_sku AS descricao,
+    e.status_tecnico AS status_tecnico,
+    e.dias_estoque AS dias_estoque,
+    e.status_aging AS status_aging,
+    f.funcao AS funcao,
+    f.sexo AS sexo,
+    f.status AS status_colaborador,
+    f.contato AS contato,
+    f.sap AS sap,
     CASE 
         WHEN e.dias_estoque BETWEEN 0 AND 7 THEN '0-7 Dias'
         WHEN e.dias_estoque BETWEEN 8 AND 14 THEN '7-14 Dias'
         WHEN e.dias_estoque > 14 THEN 'Acima 14 Dias'
-        ELSE 'Não Classificado'
-    END AS 'Faixa Aging',
+        ELSE 'Nao Classificado'
+    END AS faixa_aging,
     CASE 
         WHEN e.dias_estoque > 21 THEN 'Alto Risco'
-        WHEN e.dias_estoque > 14 THEN 'Médio Risco'
+        WHEN e.dias_estoque > 14 THEN 'Medio Risco'
         WHEN e.dias_estoque > 7 THEN 'Baixo Risco'
         ELSE 'Normal'
-    END AS 'Categoria Risco',
-    e.data_ultima_modificacao AS 'Data Última Modificação',
-    e.data_snapshot AS 'Data Snapshot',
-    e.uf AS UF,
-    e.centro_fisico AS 'Centro Físico'
+    END AS categoria_risco,
+    e.data_ultima_modificacao AS data_ultima_modificacao,
+    e.data_snapshot AS data_snapshot,
+    e.uf AS uf,
+    e.centro_fisico AS centro_fisico
 FROM estoque_vivo_historico e
 INNER JOIN forca_sp f ON UPPER(TRIM(e.nome_tecnico)) COLLATE utf8mb4_unicode_ci = UPPER(TRIM(f.colaborador)) COLLATE utf8mb4_unicode_ci
 WHERE e.data_snapshot = (SELECT MAX(data_snapshot) FROM estoque_vivo_historico);
@@ -91,19 +91,19 @@ SELECT '========================================' AS '';
 
 SELECT 
     COUNT(*) AS 'Total Equipamentos',
-    COUNT(DISTINCT `Nome do Técnico`) AS 'Técnicos',
-    COUNT(DISTINCT Supervisor) AS 'Supervisores',
-    COUNT(DISTINCT Coordenador) AS 'Coordenadores'
+    COUNT(DISTINCT nome_tecnico) AS 'Tecnicos',
+    COUNT(DISTINCT supervisor) AS 'Supervisores',
+    COUNT(DISTINCT coordenador) AS 'Coordenadores'
 FROM vw_powerbi_equipamentos;
 
 SELECT '========================================' AS '';
 
 SELECT 
-    Supervisor,
+    supervisor,
     COUNT(*) AS 'Total Equipamentos',
-    COUNT(CASE WHEN `Dias em Estoque` > 14 THEN 1 END) AS 'Críticos'
+    COUNT(CASE WHEN dias_estoque > 14 THEN 1 END) AS 'Criticos'
 FROM vw_powerbi_equipamentos
-GROUP BY Supervisor
+GROUP BY supervisor
 ORDER BY COUNT(*) DESC;
 
 SELECT '========================================' AS '';

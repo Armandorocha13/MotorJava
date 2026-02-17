@@ -9,7 +9,7 @@ Um dashboard profissional no Power BI mostrando:
 - **Equipamentos por técnico e supervisor**
 - **Aging de equipamentos** (quantos dias está parado)
 - **Gráficos e indicadores** (KPIs)
-- **Filtros interativos**
+- **Filtros interativocd s**
 
 **Tempo total:** 30 minutos  
 **Nível:** Iniciante (nunca mexeu com Power BI)
@@ -71,17 +71,44 @@ Get-Content "SETUP_COMPLETO_POWERBI.sql" | c:\xampp\mysql\bin\mysql.exe -u root 
 3. Aguarde a instalação (3-5 minutos)
 4. Clique em **"Finish"**
 
-### 2.3 - Instalar MySQL Connector
+### 2.3 - Instalar MySQL Connector/ODBC
 
-**IMPORTANTE:** O Power BI precisa deste conector para falar com o MySQL.
+**IMPORTANTE:** O Power BI precisa deste driver ODBC para conectar ao MySQL.
 
 1. Acesse: **https://dev.mysql.com/downloads/connector/odbc/**
 2. Escolha: **"Windows (x86, 64-bit), MSI Installer"**
 3. Clique em **"Download"**
 4. Na próxima página, clique em **"No thanks, just start my download"**
-5. Execute o arquivo baixado
-6. Clique em **"Next"** > **"Next"** > **"Install"**
+5. Execute o arquivo baixado (`mysql-connector-odbc-x.x.xx-winx64.msi`)
+6. Clique em **"Next"** > **"Typical"** > **"Install"**
 7. Clique em **"Finish"**
+
+### 2.4 - Configurar DSN ODBC (Fonte de Dados)
+
+**O que é DSN?** É um "atalho" que o Power BI usa para conectar ao MySQL.
+
+1. Pressione **Win + R** e digite: `odbcad32`
+2. Clique em **"OK"** (abrirá o Administrador de Fonte de Dados ODBC)
+3. Vá na aba **"DSN do Sistema"**
+4. Clique em **"Adicionar..."**
+5. Selecione **"MySQL ODBC 8.x Unicode Driver"** (ou versão mais recente)
+6. Clique em **"Concluir"**
+
+**Configurar a conexão:**
+
+```
+Data Source Name: vivo_aging_odbc
+Description: Conexão VIVO Aging Equipamentos
+TCP/IP Server: localhost
+Port: 3306
+User: root
+Password: (deixe em branco se não tiver senha)
+Database: vivo_aging
+```
+
+7. Clique em **"Test"** para testar a conexão
+8. Se aparecer **"Connection successful"**, clique em **"OK"**
+9. Clique em **"OK"** novamente para salvar o DSN
 
 ---
 
@@ -92,52 +119,85 @@ Get-Content "SETUP_COMPLETO_POWERBI.sql" | c:\xampp\mysql\bin\mysql.exe -u root 
 1. Abra o **Power BI Desktop** (ícone amarelo no menu Iniciar)
 2. Feche a tela de boas-vindas (se aparecer)
 
-### 3.2 - Obter Dados
+### 3.2 - Escolher Método de Conexão
 
-1. Na tela inicial, clique em **"Obter Dados"**
-   - Ou use o menu: **Página Inicial** > **Obter Dados**
-   - Ou pressione **Ctrl + T**
+Existem **2 formas** de conectar. Escolha uma:
 
-2. Na janela que abrir:
-   - Digite **"MySQL"** na caixa de pesquisa
-   - Selecione **"Banco de Dados MySQL"**
+---
+
+#### **OPÇÃO A: Conexão via ODBC (RECOMENDADO)** ✅
+
+Mais estável e compatível com todas as versões do Power BI.
+
+1. Clique em **"Obter Dados"** > **"Mais..."**
+2. Digite **"ODBC"** na busca
+3. Selecione **"ODBC"**
+4. Clique em **"Conectar"**
+
+**Configurar ODBC:**
+
+5. Na janela "De ODBC":
+   - Selecione **"DSN (Nome da Fonte de Dados)"**
+   - Escolha **"vivo_aging_odbc"** (que criamos no Passo 2.4)
+   - Clique em **"OK"**
+
+6. Se pedir credenciais:
+   - Selecione **"Padrão ou Personalizado"**
+   - Nome de usuário: `root`
+   - Senha: (deixe em branco)
    - Clique em **"Conectar"**
 
-### 3.3 - Configurar Conexão
+7. Na janela "Navegador":
+   - Expanda **"vivo_aging"** > **"Tables"**
+   - Marque ☑️ **"vw_powerbi_equipamentos"**
+   - Clique em **"Carregar"**
 
-Na janela "Banco de Dados MySQL":
+---
 
-```
-Servidor: localhost
-Banco de dados: vivo_aging
-```
+#### **OPÇÃO B: Conexão Direta MySQL** (Alternativa)
 
-- Clique em **"OK"**
+1. Clique em **"Obter Dados"** > **"Mais..."**
+2. Digite **"MySQL"** na busca
+3. Selecione **"Banco de Dados MySQL"**
+4. Clique em **"Conectar"**
 
-### 3.4 - Autenticar
+**Configurar Conexão:**
 
-Na janela de credenciais:
-
-1. No lado esquerdo, selecione **"Banco de dados"**
-2. Preencha:
+5. Na janela "Banco de Dados MySQL":
    ```
-   Nome de usuário: root
-   Senha: (deixe em branco se não tiver senha)
+   Servidor: localhost
+   Banco de dados: vivo_aging
    ```
-3. Clique em **"Conectar"**
+6. Clique em **"Opções Avançadas"** (seta para baixo)
+7. No campo **"Instrução SQL"**, cole:
+   ```sql
+   SELECT * FROM vw_powerbi_equipamentos
+   ```
+8. Clique em **"OK"**
 
-### 3.5 - Importar a View
+9. Na janela de credenciais:
+   - Selecione **"Banco de dados"**
+   - Nome de usuário: `root`
+   - Senha: (deixe em branco)
+   - Clique em **"Conectar"**
 
-1. Clique em **"Opções Avançadas"** (seta para baixo)
-2. No campo **"Instrução SQL"**, cole:
+10. Aguarde carregar e clique em **"Carregar"**
 
-```sql
-SELECT * FROM vw_powerbi_equipamentos
-```
+---
 
-3. Clique em **"OK"**
-4. Aguarde carregar (pode levar 10-30 segundos)
-5. Clique em **"Carregar"**
+### 3.3 - Verificar Dados Carregados
+
+Após carregar:
+
+1. No painel **"Dados"** (direita), você verá a tabela **"vw_powerbi_equipamentos"**
+2. Clique na seta para expandir e ver as colunas:
+   - `numero_serie`
+   - `nome_tecnico`
+   - `supervisor`
+   - `coordenador`
+   - `dias_estoque`
+   - `status_aging`
+   - E outras...
 
 **Pronto!** Os dados estão no Power BI.
 
@@ -150,18 +210,18 @@ SELECT * FROM vw_powerbi_equipamentos
 1. No painel direito, clique no ícone de **"Tabela"** (parece uma grade)
 2. Arraste para ocupar a maior parte da tela
 3. No painel **"Dados"** (direita), marque:
-   - ☑️ Supervisor
-   - ☑️ Nome do Técnico
-   - ☑️ Número de Série
-   - ☑️ Dias em Estoque
-   - ☑️ Status Aging
+   - ☑️ supervisor
+   - ☑️ nome_tecnico
+   - ☑️ numero_serie
+   - ☑️ dias_estoque
+   - ☑️ status_aging
 
 ### 4.2 - Adicionar Formatação Condicional
 
 1. Selecione a tabela (clique nela)
 2. No painel **"Visualizações"** (direita), clique no ícone de **pincel** (Formatar)
 3. Expanda **"Valores"**
-4. Encontre **"Dias em Estoque"**
+4. Encontre **"dias_estoque"**
 5. Ative **"Formatação condicional"** > **"Cores de fundo"**
 6. Configure:
    - **Estilo:** Regras
@@ -176,7 +236,7 @@ SELECT * FROM vw_powerbi_equipamentos
 1. Clique em área vazia do canvas
 2. Selecione visual **"Cartão"** (ícone com "123")
 3. Posicione no topo esquerdo
-4. No painel **"Dados"**, arraste **"Número de Série"** para o cartão
+4. No painel **"Dados"**, arraste **"numero_serie"** para o cartão
 5. O Power BI vai contar automaticamente
 
 **Cartão 2: Equipamentos Críticos**
@@ -190,8 +250,8 @@ SELECT * FROM vw_powerbi_equipamentos
 ```dax
 Equipamentos Críticos = 
 CALCULATE(
-    COUNT('Query1'[Número de Série]),
-    'Query1'[Dias em Estoque] > 14
+    COUNT(vw_powerbi_equipamentos[numero_serie]),
+    vw_powerbi_equipamentos[dias_estoque] > 14
 )
 ```
 
@@ -204,7 +264,7 @@ CALCULATE(
 2. Nova medida:
 
 ```dax
-Média Dias = AVERAGE('Query1'[Dias em Estoque])
+Média Dias = AVERAGE(vw_powerbi_equipamentos[dias_estoque])
 ```
 
 3. Arraste para o cartão
@@ -219,7 +279,7 @@ Média Dias = AVERAGE('Query1'[Dias em Estoque])
 % Crítico = 
 DIVIDE(
     [Equipamentos Críticos],
-    COUNT('Query1'[Número de Série]),
+    COUNT(vw_powerbi_equipamentos[numero_serie]),
     0
 ) * 100
 ```
@@ -232,28 +292,28 @@ DIVIDE(
 1. Clique em área vazia
 2. Selecione **"Gráfico de Barras Empilhadas Horizontais"**
 3. Configure:
-   - **Eixo Y:** Supervisor
+   - **Eixo Y:** supervisor
    - **Valores:** Criar 3 medidas:
 
 ```dax
 0-7 Dias = 
 CALCULATE(
-    COUNT('Query1'[Número de Série]),
-    'Query1'[Dias em Estoque] >= 0,
-    'Query1'[Dias em Estoque] <= 7
+    COUNT(vw_powerbi_equipamentos[numero_serie]),
+    vw_powerbi_equipamentos[dias_estoque] >= 0,
+    vw_powerbi_equipamentos[dias_estoque] <= 7
 )
 
 7-14 Dias = 
 CALCULATE(
-    COUNT('Query1'[Número de Série]),
-    'Query1'[Dias em Estoque] > 7,
-    'Query1'[Dias em Estoque] <= 14
+    COUNT(vw_powerbi_equipamentos[numero_serie]),
+    vw_powerbi_equipamentos[dias_estoque] > 7,
+    vw_powerbi_equipamentos[dias_estoque] <= 14
 )
 
 Acima 14 Dias = 
 CALCULATE(
-    COUNT('Query1'[Número de Série]),
-    'Query1'[Dias em Estoque] > 14
+    COUNT(vw_powerbi_equipamentos[numero_serie]),
+    vw_powerbi_equipamentos[dias_estoque] > 14
 )
 ```
 
@@ -272,9 +332,9 @@ CALCULATE(
 
 1. Clique em área vazia
 2. Selecione **"Segmentação de Dados"**
-3. Arraste **"Supervisor"** para o slicer
+3. Arraste **"supervisor"** para o slicer
 4. Posicione no topo da página
-5. Repita para criar slicer de **"Status Aging"**
+5. Repita para criar slicer de **"status_aging"**
 
 ---
 
