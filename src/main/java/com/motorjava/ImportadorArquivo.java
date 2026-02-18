@@ -125,25 +125,21 @@ public class ImportadorArquivo {
                 "coordenador, supervisor, status, dias, gerente, status_aging, expurgo" +
                 ") " +
                 "SELECT " +
-                "e.*, " + // Pega tudo da tabela bruta
-                // Enriquecimento com Força SP
-                "f.coordenador, " +
-                "f.supervisor, " +
-                "f.status, " +
-                // Cálculo de Dias
-                "DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')), " + 
-                "NULL, " + // Gerente
-                // Cálculo de Aging
-                "CASE " +
-                "  WHEN e.descricao_estado IN ('Danificado', 'Não validado a devolver', 'Retirado', 'Devoluções') THEN 'Reversa' " +
-                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) <= 7 THEN '0 a 7 dias' " +
-                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) BETWEEN 8 AND 14 THEN '7 a 14 dias' " +
-                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) > 14 THEN 'Acima de 14 dias' " +
-                "  ELSE 'Não classificado' " +
-                "END, " +
-                "NULL " + // Expurgo
-                "FROM estock_tecnico e " +
-                "LEFT JOIN forca_sp f ON f.sap = REGEXP_REPLACE(e.id_do_tecnico, '[^0-9]', '')";
+                "s.col01, s.col02, s.col03, s.col04, s.col05, " +
+                "s.col06, s.col07, s.col08, s.col09, s.col10, " +
+                "s.col11, s.col12, s.col13, s.col14, s.col15, " +
+                "s.col16, s.col17, s.col18, s.col19, s.col20, " +
+                "s.col21, s.col22, s.col23, s.col24, s.col25, " +
+                "s.col26, " +
+                // Colunas Extras vindo direto do Excel (27 a 32)
+                "s.col27, " + // Coordenador
+                "s.col28, " + // Supervisor
+                "s.col29, " + // Status
+                "s.col30, " + // Dias
+                "s.col31, " + // Gerente
+                "s.col32, " + // Status Aging (inclui Reversa)
+                "NULL " +     // Expurgo
+                "FROM stage_stock_tecnico s";
 
             try (Statement st = conn.createStatement()) {
                 int linhas = st.executeUpdate(sqlFinal);
@@ -196,7 +192,13 @@ public class ImportadorArquivo {
 
                 for (int i = 0; i < 32; i++) {
                     // Mapeamento direto: Coluna 0 do Excel -> col01 da Stage
-                    ps.setString(i + 1, getCellValueAsString(row.getCell(i)));
+                    String val = getCellValueAsString(row.getCell(i));
+                    ps.setString(i + 1, val);
+                    
+                    // DEBUG: Verificar se SANTANA está sendo lido na coluna Supervisor (índice 27)
+                    if (i == 27 && val != null && val.toUpperCase().contains("SANTANA")) {
+                         System.out.println("⚠️ DEBUG: Encontrado Supervisor SANTANA na linha " + row.getRowNum());
+                    }
                 }
                 ps.addBatch();
                 contador++;
@@ -254,6 +256,20 @@ public class ImportadorArquivo {
     private static String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         try {
+            // Se for fórmula, avalia o resultado cacheado
+            if (cell.getCellType() == CellType.FORMULA) {
+                switch (cell.getCachedFormulaResultType()) {
+                    case STRING: return cell.getStringCellValue().trim();
+                    case NUMERIC:
+                        if (DateUtil.isCellDateFormatted(cell)) return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
+                        double val = cell.getNumericCellValue();
+                        return (val == (long) val) ? String.format("%d", (long) val) : String.valueOf(val);
+                    case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+                    default: return "";
+                }
+            }
+            
+            // Tratamento padrão para outros tipos
             switch (cell.getCellType()) {
                 case STRING: return cell.getStringCellValue().trim();
                 case NUMERIC:
@@ -261,7 +277,6 @@ public class ImportadorArquivo {
                     double val = cell.getNumericCellValue();
                     return (val == (long) val) ? String.format("%d", (long) val) : String.valueOf(val);
                 case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                case FORMULA: return cell.toString();
                 default: return "";
             }
         } catch (Throwable t) { return ""; }
