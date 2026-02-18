@@ -1,51 +1,51 @@
 -- ========================================
--- ATUALIZAR VIEW POWER BI - SEM ACENTUAÇÃO
+-- VIEW POWER BI PARA EQUIPAMENTOS SERIALIZADOS
 -- ========================================
--- Execute este script para recriar a view com nomes padronizados
+-- Objetivo: Fornecer dados para os relatórios de gestão de estoque e aging.
+-- Base de dados: equipamentos_serializados (Tabela Enriquecida)
 -- ========================================
 
 CREATE OR REPLACE VIEW vw_powerbi_equipamentos AS
 SELECT 
-    e.numero_serie AS numero_serie,
-    e.nome_tecnico AS nome_tecnico,
-    f.supervisor AS supervisor,
-    f.coordenador AS coordenador,
-    f.coordenador AS gerente,
-    e.sku AS sku,
-    e.descricao_sku AS descricao,
-    e.status_tecnico AS status_tecnico,
-    e.dias_estoque AS dias_estoque,
-    e.status_aging AS status_aging,
-    f.funcao AS funcao,
-    f.sexo AS sexo,
-    f.status AS status_colaborador,
-    f.contato AS contato,
-    f.sap AS sap,
-    CASE 
-        WHEN e.dias_estoque BETWEEN 0 AND 7 THEN '0 a 7 dias'
-        WHEN e.dias_estoque BETWEEN 8 AND 14 THEN '7 a 14 dias'
-        WHEN e.dias_estoque > 14 THEN 'Acima de 14 dias'
-        ELSE 'Nao Classificado'
-    END AS faixa_aging,
-    CASE 
-        WHEN e.dias_estoque > 21 THEN 'Alto Risco'
-        WHEN e.dias_estoque > 14 THEN 'Medio Risco'
-        WHEN e.dias_estoque > 7 THEN 'Baixo Risco'
-        ELSE 'Normal'
-    END AS categoria_risco,
-    e.data_ultima_modificacao AS data_ultima_modificacao,
-    e.data_snapshot AS data_snapshot,
-    e.uf AS uf,
-    e.centro_fisico AS centro_fisico
-FROM estoque_vivo_historico e
-INNER JOIN forca_sp f ON UPPER(TRIM(e.nome_tecnico)) COLLATE utf8mb4_unicode_ci = UPPER(TRIM(f.colaborador)) COLLATE utf8mb4_unicode_ci
-WHERE e.data_snapshot = (SELECT MAX(data_snapshot) FROM estoque_vivo_historico);
+    -- 1. IDENTIFICAÇÃO DO TÉCNICO E HIERARQUIA
+    e.nome_do_tecnico AS "Nome do Técnico",
+    e.id_do_tecnico AS "Matrícula",
+    e.supervisor AS "Supervisor",
+    e.coordenador AS "Coordenador",
+    e.gerente AS "Gerente",
+    e.uf_do_tecnico AS "UF",
+    e.centro_fisico_do_tecnico AS "Centro Físico",
 
--- VERIFICAÇÃO
-SELECT '✅ View atualizada com sucesso!' AS status;
+    -- 2. DADOS DO EQUIPAMENTO
+    e.sku AS "Código SKU",
+    e.descricao_sku AS "Descrição do Material",
+    e.numero_de_serie AS "Serial",
+    e.quantidade AS "Quantidade",
+    e.descricao_estado AS "Estado do Material",
+    e.id_grupo AS "ID Grupo",
+    e.descricao_grupo AS "Grupo",
 
-SELECT 
-    COUNT(*) AS total_equipamentos,
-    COUNT(DISTINCT nome_tecnico) AS total_tecnicos,
-    COUNT(DISTINCT supervisor) AS total_supervisores
-FROM vw_powerbi_equipamentos;
+    -- 3. GESTÃO DE AGING (TEMPO DE ESTOQUE)
+    e.dias AS "Dias em Estoque",
+    e.status_aging AS "Status Aging", -- Já calculado no Java (0-7, 7-14, >14, Reversa)
+    
+    -- 4. INFORMAÇÕES DE REGRAS E QUALIDADE
+    e.id_regra AS "ID Regra", -- Para tabela auxiliar de regras
+    e.devolucoes AS "Devoluções", -- Pode indicar Reversa
+    e.retirada_danificada AS "Retirada Danificada",
+    e.expurgo AS "Expurgo",
+    
+    -- 5. OUTROS DETALHES
+    e.ultima_modificacao AS "Data Última Modificação",
+    e.status_do_tecnico AS "Status Técnico",
+    e.motivo_de_indisponibilidade AS "Motivo Indisponibilidade",
+    e.wo AS "WO",
+    e.transferencia AS "Transferência"
+
+FROM equipamentos_serializados e;
+
+-- ========================================
+-- VERIFICAÇÃO SIMPLES
+-- ========================================
+SELECT '✅ View vw_powerbi_equipamentos atualizada com sucesso!' AS Status;
+SELECT COUNT(*) AS Total_Registros FROM vw_powerbi_equipamentos;

@@ -135,6 +135,7 @@ public class ImportadorArquivo {
                 "NULL, " + // Gerente
                 // Cálculo de Aging
                 "CASE " +
+                "  WHEN e.descricao_estado IN ('Danificado', 'Não validado a devolver', 'Retirado', 'Devoluções') THEN 'Reversa' " +
                 "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) <= 7 THEN '0 a 7 dias' " +
                 "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) BETWEEN 8 AND 14 THEN '7 a 14 dias' " +
                 "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) > 14 THEN 'Acima de 14 dias' " +
