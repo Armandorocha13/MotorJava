@@ -39,6 +39,8 @@ O sistema funciona em **background**, monitorando a pasta de **Downloads** do us
 ## 🚀 Como Iniciar
 
 Apenas execute o arquivo:
-> **INICIAR_DASHBOARD.bat**
+> **iniciar_projeto.bat**
 
-E clique no botão **"INICIAR SERVIÇO"**.
+Este script irá verificar se o Maven está instalado e, caso contrário, oferecerá a opção de instalar e configurar automaticamente.
+
+E então a aplicação será iniciada.
