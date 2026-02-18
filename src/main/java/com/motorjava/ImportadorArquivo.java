@@ -135,8 +135,8 @@ public class ImportadorArquivo {
                 "NULL, " + // Gerente
                 // Cálculo de Aging
                 "CASE " +
-                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) <= 6 THEN '0 a 6 dias' " +
-                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) BETWEEN 7 AND 14 THEN '7 a 14 dias' " +
+                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) <= 7 THEN '0 a 7 dias' " +
+                "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) BETWEEN 8 AND 14 THEN '7 a 14 dias' " +
                 "  WHEN DATEDIFF(NOW(), STR_TO_DATE(e.ultima_modificacao, '%Y-%m-%d')) > 14 THEN 'Acima de 14 dias' " +
                 "  ELSE 'Não classificado' " +
                 "END, " +

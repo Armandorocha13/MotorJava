@@ -22,9 +22,9 @@ SELECT
     f.contato AS contato,
     f.sap AS sap,
     CASE 
-        WHEN e.dias_estoque BETWEEN 0 AND 7 THEN '0-7 Dias'
-        WHEN e.dias_estoque BETWEEN 8 AND 14 THEN '7-14 Dias'
-        WHEN e.dias_estoque > 14 THEN 'Acima 14 Dias'
+        WHEN e.dias_estoque BETWEEN 0 AND 7 THEN '0 a 7 dias'
+        WHEN e.dias_estoque BETWEEN 8 AND 14 THEN '7 a 14 dias'
+        WHEN e.dias_estoque > 14 THEN 'Acima de 14 dias'
         ELSE 'Nao Classificado'
     END AS faixa_aging,
     CASE 
