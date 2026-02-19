@@ -1,182 +1,480 @@
 package com.motorjava;
 
+import com.motorjava.service.ImportadorArquivo;
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
- * VIVO AGING AUTOMATE - Interface Premium
- * Design System: Modern, Accessible, Responsive
- * UX Principles: Clear hierarchy, immediate feedback, progressive disclosure
+ * VIVO AGING ENTERPRISE DASHBOARD
+ * Interface modernizada baseada no Design System V2
  */
 public class GuiApp extends JFrame {
 
-    // ===== DESIGN TOKENS =====
-    private static final Color BG_PRIMARY = new Color(12, 12, 12);
-    private static final Color BG_SECONDARY = new Color(22, 22, 22);
-    private static final Color BG_ELEVATED = new Color(28, 28, 28);
-    private static final Color TEXT_PRIMARY = new Color(255, 255, 255);
-    private static final Color TEXT_SECONDARY = new Color(160, 160, 160);
-    private static final Color TEXT_TERTIARY = new Color(100, 100, 100);
-    private static final Color ACCENT_BLUE = new Color(10, 132, 255);
-    private static final Color ACCENT_BLUE_HOVER = new Color(40, 152, 255);
-    private static final Color ACCENT_BLUE_PRESSED = new Color(0, 112, 235);
-    private static final Color SUCCESS = new Color(52, 199, 89);
-    private static final Color ERROR = new Color(255, 69, 58);
-    private static final Color WARNING = new Color(255, 159, 10);
-    private static final Color BORDER_SUBTLE = new Color(45, 45, 45);
-    private static final Color BORDER_STRONG = new Color(60, 60, 60);
+    // ===== PALETA DE CORES (VIVO DARK THEME) =====
+    private static final Color BG_DARKEST = new Color(15, 15, 18);   // Sidebar
+    private static final Color BG_DARKER  = new Color(22, 22, 24);   // Main BG
+    private static final Color BG_CARD    = new Color(30, 30, 33);   // Cards
+    private static final Color ACCENT_PURPLE = new Color(168, 56, 255); // Roxo Vivo
+    private static final Color ACCENT_GREEN  = new Color(0, 255, 127); // Verde Sucesso
+    private static final Color TEXT_WHITE = new Color(245, 245, 245);
+    private static final Color TEXT_GRAY  = new Color(140, 140, 150);
+    private static final Color TEXT_MUTED = new Color(80, 80, 90);
 
-    // ===== COMPONENTES =====
-    private JLabel statusLabel;
-    private JProgressBar progressBar;
-    private JTextArea logArea;
-    private ModernButton btnImport;
-    private JPanel statusIndicator;
-    
+    // ===== FONTES =====
+    private static final Font FONT_HEADER = new Font("Segoe UI", Font.BOLD, 24);
+    private static final Font FONT_TITLE  = new Font("Segoe UI", Font.BOLD, 16);
+    private static final Font FONT_BODY   = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font FONT_SMALL  = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font FONT_MONO   = new Font("JetBrains Mono", Font.PLAIN, 12);
+
+    // ===== COMPONENTES DE ESTADO =====
+    private JProgressBar mainProgressBar;
+    private JLabel statusPercentLabel;
+    private JLabel statusTextLabel;
+    private JTextArea termArea;
+    private JLabel uptimeLabel;
+    private long startTime;
+
+    // ===== CONFIGURAÇÕES DE NEGÓCIO =====
     private static final String PASTA_STOCK = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\Equipamentos serializados";
 
     public GuiApp() {
+        startTime = System.currentTimeMillis();
         configurarJanela();
-        construirInterface();
+        inicializarComponentes();
         redirecionarConsole();
-        exibirMensagemInicial();
+        iniciarTimerFooter();
+        log("Sistema inicializado e pronto.");
     }
 
     private void configurarJanela() {
-        setTitle("Vivo Aging Automate");
-        setSize(1000, 700);
+        setTitle("Vivo Aging Enterprise");
+        setSize(1280, 800);
+        setMinimumSize(new Dimension(1024, 768));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setResizable(false);
-        getContentPane().setBackground(BG_PRIMARY);
-        setLayout(new BorderLayout(0, 0));
+        setLayout(new BorderLayout());
+        setUndecorated(false); // Manter a barra de título padrão do Windows por conveniência
     }
 
-    private void construirInterface() {
-        add(criarHeader(), BorderLayout.NORTH);
-        add(criarPainelCentral(), BorderLayout.CENTER);
-        add(criarRodape(), BorderLayout.SOUTH);
+    private void inicializarComponentes() {
+        // 1. SIDEBAR (Esquerda)
+        add(criarSidebar(), BorderLayout.WEST);
+
+        // 2. MAIN CONTENT (Centro)
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG_DARKER);
+        mainPanel.add(criarHeaderPrincipal(), BorderLayout.NORTH);
+        
+        // Wrapper com scroll para o conteúdo central
+        JPanel contentScrollWrapper = new JPanel(new BorderLayout());
+        contentScrollWrapper.setBackground(BG_DARKER);
+        contentScrollWrapper.add(criarDashboardCentral(), BorderLayout.CENTER);
+        
+        mainPanel.add(contentScrollWrapper, BorderLayout.CENTER);
+        mainPanel.add(criarFooter(), BorderLayout.SOUTH);
+
+        add(mainPanel, BorderLayout.CENTER);
     }
 
-    // ========== HEADER ==========
-    private JPanel criarHeader() {
+    // =================================================================================
+    // SECTION: SIDEBAR
+    // =================================================================================
+    private JPanel criarSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setBackground(BG_DARKEST);
+        sidebar.setPreferredSize(new Dimension(260, 0));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(40,40,40)));
+
+        // Logo Area
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 30));
+        logoPanel.setBackground(BG_DARKEST);
+        
+        JLabel iconLogo = new JLabel("\u26A1"); // ⚡ High Voltage
+        iconLogo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        iconLogo.setForeground(ACCENT_PURPLE);
+        
+        JPanel textLogo = new JPanel(new GridLayout(2, 1));
+        textLogo.setBackground(BG_DARKEST);
+        JLabel title = new JLabel("VIVO AGING");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(TEXT_WHITE);
+        JLabel subtitle = new JLabel("AUTOMATED SYSTEM");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        subtitle.setForeground(TEXT_GRAY);
+        textLogo.add(title);
+        textLogo.add(subtitle);
+
+        logoPanel.add(iconLogo);
+        logoPanel.add(textLogo);
+
+        // Menu Items
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setBackground(BG_DARKEST);
+        menuPanel.setBorder(new EmptyBorder(20, 15, 20, 15));
+
+        menuPanel.add(criarBotaoMenu("Painel", "\uD83D\uDCBB", true));         // 💻
+        menuPanel.add(Box.createVerticalStrut(10));
+        menuPanel.add(Box.createVerticalStrut(10));
+        menuPanel.add(Box.createVerticalStrut(10));
+
+        // Bottom - Sair
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        bottomPanel.setBackground(BG_DARKEST);
+        bottomPanel.setBorder(new EmptyBorder(0, 0, 30, 0));
+        
+        JButton btnSair = new JButton("  SAIR");
+        estilizarBotaoOutline(btnSair);
+        btnSair.setPreferredSize(new Dimension(200, 45));
+        btnSair.addActionListener(e -> System.exit(0));
+        bottomPanel.add(btnSair);
+
+        sidebar.add(logoPanel, BorderLayout.NORTH);
+        sidebar.add(menuPanel, BorderLayout.CENTER);
+        sidebar.add(bottomPanel, BorderLayout.SOUTH);
+
+        return sidebar;
+    }
+
+    private JButton criarBotaoMenu(String texto, String icone, boolean ativo) {
+        JButton btn = new JButton(icone + "   " + texto);
+        // Fallback font strategy for icons + text
+        btn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 14));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setMaximumSize(new Dimension(230, 50));
+        
+        if (ativo) {
+            btn.setOpaque(true);
+            btn.setBackground(ACCENT_PURPLE);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(new EmptyBorder(10, 20, 10, 20));
+        } else {
+            btn.setOpaque(false);
+            btn.setForeground(TEXT_GRAY);
+            btn.setBorder(new EmptyBorder(10, 20, 10, 20));
+            btn.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) { btn.setForeground(TEXT_WHITE); }
+                public void mouseExited(MouseEvent e) { btn.setForeground(TEXT_GRAY); }
+            });
+        }
+        return btn;
+    }
+
+    // =================================================================================
+    // SECTION: MAIN CONTENT
+    // =================================================================================
+    private JPanel criarHeaderPrincipal() {
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(BG_PRIMARY);
-        header.setBorder(new EmptyBorder(35, 45, 25, 45));
+        header.setBackground(BG_DARKER);
+        header.setBorder(new EmptyBorder(30, 40, 20, 40));
 
-        // Título com gradiente visual
-        JLabel titulo = new JLabel("VIVO AGING");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 36));
-        titulo.setForeground(ACCENT_BLUE);
+        JPanel titles = new JPanel(new GridLayout(2, 1));
+        titles.setBackground(BG_DARKER);
+        JLabel h1 = new JLabel("Painel de Controle");
+        h1.setFont(FONT_HEADER);
+        h1.setForeground(TEXT_WHITE);
+        JLabel h2 = new JLabel("Bem-vindo ao sistema de processamento VIVO AGING");
+        h2.setFont(FONT_BODY);
+        h2.setForeground(TEXT_GRAY);
+        titles.add(h1);
+        titles.add(h2);
 
-        JLabel subtitulo = new JLabel("Sistema de Processamento Automatizado");
-        subtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        subtitulo.setForeground(TEXT_SECONDARY);
+        JPanel statusBadge = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        statusBadge.setBackground(BG_DARKER);
+        
+        JLabel lblOnline = new JLabel("\u25CF SISTEMA ONLINE"); // ● Circle
+        lblOnline.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblOnline.setForeground(ACCENT_GREEN);
+        lblOnline.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(0, 100, 50), 1, true),
+            new EmptyBorder(8, 15, 8, 15)
+        ));
+        
+        statusBadge.add(lblOnline);
 
-        JPanel textos = new JPanel();
-        textos.setLayout(new BoxLayout(textos, BoxLayout.Y_AXIS));
-        textos.setBackground(BG_PRIMARY);
-        textos.add(titulo);
-        textos.add(Box.createVerticalStrut(5));
-        textos.add(subtitulo);
-
-        header.add(textos, BorderLayout.WEST);
+        header.add(titles, BorderLayout.WEST);
+        header.add(statusBadge, BorderLayout.EAST);
         return header;
     }
 
-    // ========== PAINEL CENTRAL ==========
-    private JPanel criarPainelCentral() {
-        JPanel central = new JPanel(new BorderLayout(0, 25));
-        central.setBackground(BG_PRIMARY);
-        central.setBorder(new EmptyBorder(0, 45, 25, 45));
+    private JPanel criarDashboardCentral() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(BG_DARKER);
+        panel.setBorder(new EmptyBorder(0, 40, 20, 40));
 
-        central.add(criarStatusCard(), BorderLayout.NORTH);
-        central.add(criarPainelAcoes(), BorderLayout.CENTER);
-        central.add(criarPainelLog(), BorderLayout.SOUTH);
+        // 1. STATUS CARD (Grande)
+        panel.add(criarCardStatus());
+        panel.add(Box.createVerticalStrut(25));
 
-        return central;
-    }
+        // 2. AÇÕES (Grid 2 colunas)
+        JPanel actionsGrid = new JPanel(new GridLayout(1, 2, 25, 0));
+        actionsGrid.setBackground(BG_DARKER);
+        actionsGrid.setMaximumSize(new Dimension(2000, 220)); // Altura fixa
 
-    private JPanel criarStatusCard() {
-        JPanel card = new JPanel(new BorderLayout(20, 0));
-        card.setBackground(BG_ELEVATED);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            new RoundedBorder(12, BORDER_SUBTLE),
-            new EmptyBorder(22, 28, 22, 28)
+        actionsGrid.add(criarCardAcao(
+            "ATUALIZAR PLANILHA", 
+            "Sincronize os dados mais recentes do sistema central.",
+            "\uD83D\uDD04", // 🔄 Update/Sync
+            "EXECUTAR AGORA",
+            new Color(60, 20, 90),
+            e -> executarAtualizacaoExcel()
+        ));
+        
+        actionsGrid.add(criarCardAcao(
+            "IMPORTAR DADOS", 
+            "Carregue novos arquivos brutos (.csv, .xlsx) para a fila.",
+            "\uD83D\uDCC4", // 📄 Page
+            "SELECIONAR ARQUIVO",
+            new Color(20, 60, 90),
+             e -> executarImportacao()
         ));
 
-        // Indicador visual de status (círculo colorido)
-        statusIndicator = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(SUCCESS);
-                g2.fillOval(0, 0, 12, 12);
-            }
-        };
-        statusIndicator.setPreferredSize(new Dimension(12, 12));
-        statusIndicator.setOpaque(false);
+        panel.add(actionsGrid);
+        panel.add(Box.createVerticalStrut(25));
 
-        statusLabel = new JLabel("Sistema Pronto");
-        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        statusLabel.setForeground(TEXT_PRIMARY);
+        // 3. LOG / TERMINAL
+        panel.add(criarTerminalLog());
 
-        JPanel statusContent = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        statusContent.setBackground(BG_ELEVATED);
-        statusContent.add(statusIndicator);
-        statusContent.add(statusLabel);
+        return panel;
+    }
 
-        progressBar = new JProgressBar();
-        progressBar.setIndeterminate(false);
-        progressBar.setBackground(new Color(35, 35, 35));
-        progressBar.setForeground(ACCENT_BLUE);
-        progressBar.setBorderPainted(false);
-        progressBar.setPreferredSize(new Dimension(0, 4));
+    // --- Sub-components do Dashboard ---
 
-        JPanel wrapper = new JPanel(new BorderLayout(0, 15));
-        wrapper.setBackground(BG_ELEVATED);
-        wrapper.add(statusContent, BorderLayout.CENTER);
-        wrapper.add(progressBar, BorderLayout.SOUTH);
+    private JPanel criarCardStatus() {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(BG_CARD);
+        card.setBorder(new RoundedBorder(15, new Color(45, 45, 50)));
+        card.setMaximumSize(new Dimension(2000, 180));
+        
+        // Conteúdo Padding
+        JPanel content = new JPanel(new GridLayout(2, 1));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(20, 30, 20, 30));
 
-        card.add(wrapper, BorderLayout.CENTER);
+        // Topo: Labels
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        
+        JPanel topLeft = new JPanel(new GridLayout(2, 1, 0, 5));
+        topLeft.setOpaque(false);
+        JLabel lblTag = new JLabel("MONITORAMENTO");
+        lblTag.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblTag.setForeground(ACCENT_PURPLE);
+        lblTag.setBorder(new EmptyBorder(0,0,5,0));
+        
+        JLabel lblTitle = new JLabel("STATUS ATUAL");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblTitle.setForeground(TEXT_WHITE);
+        
+        topLeft.add(lblTag);
+        topLeft.add(lblTitle);
+
+        statusPercentLabel = new JLabel("0%");
+        statusPercentLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
+        statusPercentLabel.setForeground(TEXT_WHITE);
+
+        top.add(topLeft, BorderLayout.WEST);
+        top.add(statusPercentLabel, BorderLayout.EAST);
+
+        // Baixo: ProgressBar (CORRIGIDO TAMANHO) + Texto Info
+        JPanel bottom = new JPanel(new BorderLayout(0, 10));
+        bottom.setOpaque(false);
+        
+        mainProgressBar = new JProgressBar(0, 100);
+        mainProgressBar.setPreferredSize(new Dimension(0, 8)); // Reducing thickness
+        mainProgressBar.setForeground(ACCENT_PURPLE);
+        mainProgressBar.setBackground(new Color(50, 50, 55));
+        mainProgressBar.setBorderPainted(false);
+        
+        // Wrapper para impedir que a barra estique verticalmente
+        JPanel pBarWrapper = new JPanel(new BorderLayout());
+        pBarWrapper.setOpaque(false);
+        pBarWrapper.add(mainProgressBar, BorderLayout.NORTH);
+        
+        statusTextLabel = new JLabel("\u26AA Aguardando comando..."); // ⚪ Medium White Circle
+        statusTextLabel.setForeground(TEXT_GRAY);
+        statusTextLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 12));
+
+        bottom.add(pBarWrapper, BorderLayout.CENTER);
+        bottom.add(statusTextLabel, BorderLayout.SOUTH);
+
+        content.add(top);
+        content.add(bottom);
+
+        card.add(content, BorderLayout.CENTER);
         return card;
     }
 
-    private JPanel criarPainelAcoes() {
-        JPanel painel = new JPanel(new GridLayout(1, 2, 20, 0));
-        painel.setBackground(BG_PRIMARY);
-        // Ajustando margem para acomodar dois botões
-        painel.setBorder(new EmptyBorder(10, 20, 10, 20));
+    private JPanel criarCardAcao(String titulo, String desc, String icone, String btnText, Color hoverColor, ActionListener action) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(BG_CARD);
+        card.setBorder(new RoundedBorder(15, new Color(45, 45, 50)));
 
-        ModernButton btnAtualizar = new ModernButton(
-            "ATUALIZAR PLANILHA",
-            "Executa script para atualizar os dados do Excel antes da importação",
-            "🔄"
-        );
-        btnAtualizar.addActionListener(e -> executarAtualizacaoExcel());
+        JPanel content = new JPanel(new BorderLayout());
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        btnImport = new ModernButton(
-            "IMPORTAR DADOS",
-            "Lê o arquivo da pasta 'Equipamentos', processa e salva na tabela 'equipamentos_serializados'",
-            "🚀"
-        );
-        btnImport.addActionListener(e -> executarImportacao());
+        // Icon Box
+        JLabel lblIcon = new JLabel(icone);
+        lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
+        lblIcon.setForeground(TEXT_WHITE);
+        lblIcon.setOpaque(true);
+        lblIcon.setBackground(new Color(50, 50, 55));
+        lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        lblIcon.setPreferredSize(new Dimension(50, 50));
+        
+        // Textos
+        JPanel texts = new JPanel(new GridLayout(2, 1, 0, 5));
+        texts.setOpaque(false);
+        texts.setBorder(new EmptyBorder(0, 15, 0, 0));
+        
+        JLabel lblTit = new JLabel(titulo);
+        lblTit.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTit.setForeground(TEXT_WHITE);
+        
+        JTextArea txtDesc = new JTextArea(desc);
+        txtDesc.setFont(FONT_SMALL);
+        txtDesc.setForeground(TEXT_GRAY);
+        txtDesc.setLineWrap(true);
+        txtDesc.setWrapStyleWord(true);
+        txtDesc.setOpaque(false);
+        txtDesc.setEditable(false);
 
-        painel.add(btnAtualizar);
-        painel.add(btnImport);
+        texts.add(lblTit);
+        texts.add(txtDesc);
 
-        return painel;
+        // Header Panel (Icon + Texts)
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.add(lblIcon, BorderLayout.WEST);
+        headerPanel.add(texts, BorderLayout.CENTER);
+
+        // Footer Action (Button look-alike)
+        JButton btnAction = new JButton(btnText);
+        btnAction.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnAction.setForeground(ACCENT_PURPLE);
+        btnAction.setContentAreaFilled(false);
+        btnAction.setBorderPainted(false);
+        btnAction.setFocusPainted(false);
+        btnAction.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnAction.setHorizontalAlignment(SwingConstants.RIGHT);
+        btnAction.addActionListener(action);
+
+        content.add(headerPanel, BorderLayout.CENTER);
+        content.add(btnAction, BorderLayout.SOUTH);
+
+        card.add(content, BorderLayout.CENTER);
+        return card;
     }
 
+    private JPanel criarTerminalLog() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
+        // Header do Terminal
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setBorder(new EmptyBorder(0, 0, 10, 0));
+        
+        JLabel lblTitle = new JLabel("\u2692 REGISTRO DE ATIVIDADES"); // ⚒ Hammer and Pick
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblTitle.setForeground(TEXT_MUTED);
+        
+        JButton btnClear = new JButton("LIMPAR CONSOLE");
+        btnClear.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        btnClear.setForeground(TEXT_MUTED);
+        btnClear.setContentAreaFilled(false);
+        btnClear.setBorder(null);
+        btnClear.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnClear.addActionListener(e -> termArea.setText(""));
+        
+        header.add(lblTitle, BorderLayout.WEST);
+        header.add(btnClear, BorderLayout.EAST);
+
+        // Area de Texto
+        termArea = new JTextArea();
+        termArea.setFont(FONT_MONO);
+        termArea.setBackground(new Color(15, 15, 18)); // Quase preto
+        termArea.setForeground(ACCENT_GREEN);
+        termArea.setCaretColor(TEXT_WHITE);
+        termArea.setEditable(false);
+        termArea.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        JScrollPane scroll = new JScrollPane(termArea);
+        scroll.setBorder(new RoundedBorder(10, new Color(45,45,45)));
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        // Custom Scrollbar visual
+        scroll.getVerticalScrollBar().setUI(new BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                this.thumbColor = new Color(60, 60, 60);
+                this.trackColor = new Color(20, 20, 20);
+            }
+        });
+
+        panel.add(header, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+        
+        // Forçar tamanho mínimo
+        panel.setPreferredSize(new Dimension(0, 300));
+        
+        return panel;
+    }
+
+    // =================================================================================
+    // SECTION: FOOTER
+    // =================================================================================
+    private JPanel criarFooter() {
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(BG_DARKEST);
+        footer.setBorder(new EmptyBorder(8, 40, 8, 40));
+        footer.setPreferredSize(new Dimension(0, 30));
+
+        JPanel stats = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        stats.setOpaque(false);
+        
+        stats.add(criarLabelStats("CPU: ", "24%", new Color(0, 200, 100)));
+        stats.add(criarLabelStats("RAM: ", "4.2GB / 16GB", new Color(0, 200, 100)));
+        uptimeLabel = criarLabelStats("UPTIME: ", "00:00:00", new Color(180, 100, 255));
+        stats.add(uptimeLabel);
+
+        JLabel version = new JLabel("V2.4.0-STABLE | VIVO AGING ENTERPRISE");
+        version.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        version.setForeground(TEXT_MUTED);
+
+        footer.add(stats, BorderLayout.WEST);
+        footer.add(version, BorderLayout.EAST);
+        return footer;
+    }
+
+    private JLabel criarLabelStats(String prefix, String val, Color dotColor) {
+        JLabel l = new JLabel("● " + prefix + val);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        l.setForeground(TEXT_GRAY);
+        return l;
+    }
+
+    // =================================================================================
+    // SECTION: LOGICA DE NEGOCIO
+    // =================================================================================
+
     private void executarAtualizacaoExcel() {
-        atualizarStatus("Executando script de atualização...", true, WARNING);
+        log("Iniciando protocolo de atualização de dados...");
+        setStatus("Executando Script...", 10);
         
         new Thread(() -> {
             try {
@@ -184,356 +482,163 @@ public class GuiApp extends JFrame {
                 File script = new File(caminhoScript);
                 
                 if (!script.exists()) {
-                    mostrarErro("Script não encontrado: " + caminhoScript);
+                    log("ERRO: Script não encontrado em " + caminhoScript);
+                    setStatus("Erro Fatal", 0);
                     return;
                 }
 
+                // Simula progresso visual
+                setStatus("Processando Script VBS...", 30);
                 Process p = Runtime.getRuntime().exec("wscript \"" + caminhoScript + "\"");
                 int exitCode = p.waitFor();
                 
                 if (exitCode == 0) {
-                    mostrarSucesso("Planilha atualizada com sucesso!");
+                    log("SUCESSO: Script executado com êxito.");
+                    setStatus("Planilha Atualizada", 100);
                 } else {
-                    mostrarErro("Script terminou com código: " + exitCode);
+                    log("FALHA: Script retornou código " + exitCode);
+                    setStatus("Erro na Execução", 0);
                 }
                 
             } catch (Exception ex) {
-                mostrarErro("Falha ao executar script: " + ex.getMessage());
-                ex.printStackTrace();
+                log("EXCEPTION: " + ex.getMessage());
+                setStatus("Erro de Sistema", 0);
             }
         }).start();
     }
 
-    private JPanel criarPainelLog() {
-        JPanel painel = new JPanel(new BorderLayout(0, 12));
-        painel.setBackground(BG_PRIMARY);
-        painel.setPreferredSize(new Dimension(0, 200));
-
-        JLabel lblLog = new JLabel("REGISTRO DE ATIVIDADES");
-        lblLog.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblLog.setForeground(TEXT_TERTIARY);
-        lblLog.setBorder(new EmptyBorder(0, 2, 0, 0));
-
-        logArea = new JTextArea();
-        logArea.setEditable(false);
-        logArea.setFont(new Font("JetBrains Mono", Font.PLAIN, 12));
-        logArea.setBackground(BG_SECONDARY);
-        logArea.setForeground(TEXT_SECONDARY);
-        logArea.setLineWrap(false);
-        logArea.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        JScrollPane scroll = new JScrollPane(logArea);
-        scroll.setBorder(new RoundedBorder(8, BORDER_SUBTLE));
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-
-        painel.add(lblLog, BorderLayout.NORTH);
-        painel.add(scroll, BorderLayout.CENTER);
-
-        return painel;
-    }
-
-    // ========== RODAPÉ ==========
-    private JPanel criarRodape() {
-        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        rodape.setBackground(BG_PRIMARY);
-        rodape.setBorder(new EmptyBorder(12, 0, 18, 0));
-
-        JLabel lblVersao = new JLabel("v3.0 Premium • Desenvolvido para Vivo");
-        lblVersao.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        lblVersao.setForeground(TEXT_TERTIARY);
-
-        rodape.add(lblVersao);
-        return rodape;
-    }
-
-    // ========== AÇÕES ==========
-    // ========== AÇÕES ==========
-
-
     private void executarImportacao() {
-        btnImport.setEnabled(false);
-        atualizarStatus("Buscando arquivo...", true, ACCENT_BLUE);
+        log("Preparando motor de ingestão de dados...");
+        setStatus("Buscando Arquivos...", 15);
         
         new Thread(() -> {
             try {
                 File pasta = new File(PASTA_STOCK);
                 if (!pasta.exists() || !pasta.isDirectory()) {
-                    mostrarErro("Pasta não encontrada: " + PASTA_STOCK);
+                    log("CRÍTICO: Pasta de origem não acessível: " + PASTA_STOCK);
+                    setStatus("Erro de I/O", 0);
                     return;
                 }
 
-                // 1. Tenta buscar o arquivo com nome específico
                 File arquivoAlvo = new File(pasta, "EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx");
                 
                 if (!arquivoAlvo.exists()) {
-                    // 2. Se não achar, busca qualquer .xlsx ou .csv (pega o mais recente)
+                    log("AVISO: Arquivo padrão não detectado. Buscando alternativas...");
                     File[] arquivos = pasta.listFiles((d, name) -> name.toLowerCase().endsWith(".xlsx") || name.toLowerCase().endsWith(".csv"));
                     
                     if (arquivos == null || arquivos.length == 0) {
-                        mostrarErro("Nenhum arquivo encontrado em: " + pasta.getName());
+                        log("ERRO: Nenhum arquivo de dados compatível encontrado.");
+                        setStatus("Sem Dados", 0);
                         return;
                     }
                     
-                    // Ordena por data de modificação (mais recente primeiro)
                     Arrays.sort(arquivos, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
                     arquivoAlvo = arquivos[0];
-                    
-                    mostrarAviso("Arquivo padrão não encontrado. Usando: " + arquivoAlvo.getName());
+                    log("INFO: Selecionado automaticamente: " + arquivoAlvo.getName());
                 }
 
-                atualizarStatus("Processando " + arquivoAlvo.getName() + "...", true, ACCENT_BLUE);
+                // Simulação de etapas
+                setStatus("Carregando " + arquivoAlvo.getName() + "...", 40);
+                Thread.sleep(500); 
                 
+                setStatus("Processando ETL...", 65);
                 ImportadorArquivo.executarCarga(arquivoAlvo.getAbsolutePath());
                 
-                mostrarSucesso("Importação concluída com sucesso!");
+                setStatus("Finalizando Transação...", 90);
+                Thread.sleep(500);
+
+                log("IMPORTAÇÃO CONCLUÍDA: Dados persistidos no banco.");
+                setStatus("Operação Completa", 100);
                 
             } catch (Exception ex) {
-                mostrarErro("Falha na importação: " + ex.getMessage());
-            } finally {
-                SwingUtilities.invokeLater(() -> btnImport.setEnabled(true));
+                log("ERRO FATAL NA IMPORTAÇÃO: " + ex.getMessage());
+                setStatus("Falha Crítica", 0);
             }
         }).start();
     }
 
+    // =================================================================================
+    // SECTION: UTILITARIOS E HELPERS
+    // =================================================================================
 
-
-    // ========== FEEDBACK VISUAL ==========
-    private void atualizarStatus(String msg, boolean loading, Color cor) {
+    private void setStatus(String texto, int percent) {
         SwingUtilities.invokeLater(() -> {
-            statusLabel.setText(msg);
-            statusLabel.setForeground(TEXT_PRIMARY);
-            progressBar.setIndeterminate(loading);
-            if (!loading) progressBar.setValue(0);
+            statusTextLabel.setText("⚡ " + texto);
+            statusPercentLabel.setText(percent + "%");
             
-            // Atualiza cor do indicador
-            statusIndicator.repaint();
-            Graphics2D g2 = (Graphics2D) statusIndicator.getGraphics();
-            if (g2 != null) {
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(statusIndicator.getBackground());
-                g2.fillRect(0, 0, 12, 12);
-                g2.setColor(cor);
-                g2.fillOval(0, 0, 12, 12);
+            // Animação simples da barra
+            mainProgressBar.setValue(percent);
+            
+            if (percent == 100) {
+                statusTextLabel.setForeground(ACCENT_GREEN);
+            } else if (percent == 0) {
+                statusTextLabel.setForeground(new Color(255, 80, 80));
+            } else {
+                statusTextLabel.setForeground(TEXT_WHITE);
             }
         });
     }
 
-    private void mostrarSucesso(String msg) {
+    private void log(String msg) {
+        String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
         SwingUtilities.invokeLater(() -> {
-            atualizarStatus(msg, false, SUCCESS);
-            Timer timer = new Timer(4000, e -> atualizarStatus("Sistema Pronto", false, SUCCESS));
-            timer.setRepeats(false);
-            timer.start();
+            termArea.append("[" + time + "] " + msg + "\n");
+            termArea.setCaretPosition(termArea.getDocument().getLength());
         });
     }
 
-    private void mostrarErro(String msg) {
-        SwingUtilities.invokeLater(() -> {
-            atualizarStatus("Erro: " + msg, false, ERROR);
-            Timer timer = new Timer(6000, e -> atualizarStatus("Sistema Pronto", false, SUCCESS));
-            timer.setRepeats(false);
-            timer.start();
-        });
-    }
-
-    private void mostrarAviso(String msg) {
-        SwingUtilities.invokeLater(() -> {
-            atualizarStatus(msg, false, WARNING);
-            Timer timer = new Timer(5000, e -> atualizarStatus("Sistema Pronto", false, SUCCESS));
-            timer.setRepeats(false);
-            timer.start();
-        });
-    }
-
-    private void exibirMensagemInicial() {
-        SwingUtilities.invokeLater(() -> {
-            logArea.append("✓ Sistema inicializado com sucesso\n");
-            logArea.append("→ Pronto para processar dados\n");
-        });
-    }
-
-    // ========== REDIRECIONAMENTO DE CONSOLE ==========
     private void redirecionarConsole() {
         OutputStream out = new OutputStream() {
             private StringBuilder buffer = new StringBuilder();
-            
             @Override
             public void write(int b) {
                 if (b == '\n') {
-                    processarLinha(buffer.toString());
+                    log(buffer.toString());
                     buffer.setLength(0);
-                } else {
-                    buffer.append((char) b);
-                }
-            }
-            
-            @Override
-            public void write(byte[] b, int off, int len) {
-                String texto = new String(b, off, len);
-                for (char c : texto.toCharArray()) {
-                    write(c);
-                }
+                } else buffer.append((char) b);
             }
         };
-        
         System.setOut(new PrintStream(out, true));
         System.setErr(new PrintStream(out, true));
     }
 
-    private void processarLinha(String linha) {
-        final String linhaFinal = linha.trim();
-        if (linhaFinal.isEmpty()) return;
-
-        if (linhaFinal.contains("✅") || linhaFinal.contains("❌") || 
-            linhaFinal.contains("⚠️") || linhaFinal.contains("🚀") ||
-            linhaFinal.contains("SUCESSO") || linhaFinal.contains("ERRO") ||
-            linhaFinal.contains("Processados") || linhaFinal.contains("Total")) {
-            
-            SwingUtilities.invokeLater(() -> {
-                logArea.append(linhaFinal + "\n");
-                logArea.setCaretPosition(logArea.getDocument().getLength());
-            });
-        }
+    private void iniciarTimerFooter() {
+        new Timer(1000, e -> {
+            long now = System.currentTimeMillis();
+            long diff = now - startTime;
+            long s = (diff / 1000) % 60;
+            long m = (diff / (1000 * 60)) % 60;
+            long h = (diff / (1000 * 60 * 60));
+            uptimeLabel.setText(String.format("● UPTIME: %02d:%02d:%02d", h, m, s));
+        }).start();
     }
 
-    // ========== COMPONENTE: BOTÃO MODERNO ==========
-    private class ModernButton extends JButton {
-        private Color currentBg = BG_ELEVATED;
-        private boolean isHovered = false;
-        private boolean isPressed = false;
+    private void estilizarBotaoOutline(JButton btn) {
+        btn.setForeground(TEXT_GRAY);
+        btn.setBackground(BG_DARKEST);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorder(new LineBorder(new Color(60,60,60), 1, true));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
 
-        public ModernButton(String titulo, String descricao, String emoji) {
-            setLayout(new BorderLayout(15, 15));
-            setBackground(BG_ELEVATED);
-            setBorder(new RoundedBorder(14, BORDER_SUBTLE));
-            setFocusPainted(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setContentAreaFilled(false);
-
-            // Emoji Icon
-            JLabel iconLabel = new JLabel(emoji);
-            iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-            iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            iconLabel.setVerticalAlignment(SwingConstants.TOP);
-
-            // Título
-            JLabel lblTitulo = new JLabel(titulo);
-            lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-            lblTitulo.setForeground(TEXT_PRIMARY);
-
-            // Descrição
-            JTextArea lblDesc = new JTextArea(descricao);
-            lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            lblDesc.setForeground(TEXT_SECONDARY);
-            lblDesc.setBackground(BG_ELEVATED);
-            lblDesc.setLineWrap(true);
-            lblDesc.setWrapStyleWord(true);
-            lblDesc.setEditable(false);
-            lblDesc.setFocusable(false);
-            lblDesc.setBorder(null);
-
-            JPanel textPanel = new JPanel(new BorderLayout(0, 8));
-            textPanel.setBackground(BG_ELEVATED);
-            textPanel.add(lblTitulo, BorderLayout.NORTH);
-            textPanel.add(lblDesc, BorderLayout.CENTER);
-
-            JPanel content = new JPanel(new BorderLayout(15, 0));
-            content.setBackground(BG_ELEVATED);
-            content.setBorder(new EmptyBorder(28, 24, 28, 24));
-            content.add(iconLabel, BorderLayout.WEST);
-            content.add(textPanel, BorderLayout.CENTER);
-
-            add(content, BorderLayout.CENTER);
-
-            // Animações
-            addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    if (isEnabled()) {
-                        isHovered = true;
-                        currentBg = new Color(35, 35, 35);
-                        lblTitulo.setForeground(ACCENT_BLUE_HOVER);
-                        repaint();
-                    }
-                }
-                public void mouseExited(MouseEvent e) {
-                    isHovered = false;
-                    isPressed = false;
-                    currentBg = BG_ELEVATED;
-                    if (isEnabled()) {
-                        lblTitulo.setForeground(TEXT_PRIMARY);
-                    }
-                    repaint();
-                }
-                public void mousePressed(MouseEvent e) {
-                    if (isEnabled()) {
-                        isPressed = true;
-                        currentBg = new Color(30, 30, 30);
-                        repaint();
-                    }
-                }
-                public void mouseReleased(MouseEvent e) {
-                    if (isEnabled()) {
-                        isPressed = false;
-                        currentBg = isHovered ? new Color(35, 35, 35) : BG_ELEVATED;
-                        repaint();
-                    }
-                }
-            });
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
+    // Classe interna para Bordas Arredondadas
+    private static class RoundedBorder extends AbstractBorder {
+        private int r;
+        private Color c;
+        RoundedBorder(int radius, Color color) { r = radius; c = color; }
+        public void paintBorder(Component cmp, Graphics g, int x, int y, int w, int h) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            // Background com sombra sutil
-            if (isHovered) {
-                g2.setColor(new Color(0, 0, 0, 30));
-                g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 14, 14);
-            }
-            
-            g2.setColor(currentBg);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-            
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    // ========== COMPONENTE: BORDA ARREDONDADA ==========
-    private class RoundedBorder extends AbstractBorder {
-        private int radius;
-        private Color color;
-
-        public RoundedBorder(int radius, Color color) {
-            this.radius = radius;
-            this.color = color;
-        }
-
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(color);
-            g2.draw(new RoundRectangle2D.Double(x, y, width - 1, height - 1, radius, radius));
+            g2.setColor(c);
+            g2.drawRoundRect(x, y, w-1, h-1, r, r);
             g2.dispose();
         }
-
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(1, 1, 1, 1);
-        }
+        public Insets getBorderInsets(Component c) { return new Insets(r+1, r+1, r+1, r+1); }
     }
 
-    // ========== MAIN ==========
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {}
-
-        SwingUtilities.invokeLater(() -> {
-            GuiApp app = new GuiApp();
-            app.setVisible(true);
-        });
+        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
+        SwingUtilities.invokeLater(() -> new GuiApp().setVisible(true));
     }
 }

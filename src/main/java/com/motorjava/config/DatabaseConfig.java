@@ -18,7 +18,8 @@ public class DatabaseConfig {
 
     private static final Properties properties = new Properties();
 
-    // Bloco estático: Roda uma vez assim que o programa inicia
+    // Bloco estático: Roda uma vez assim que a classe é carregada na memória.
+    // Tenta ler o arquivo 'database.properties' da pasta src/main/resources.
     static {
         try (InputStream input = DatabaseConfig.class.getClassLoader().getResourceAsStream("database.properties")) {
             if (input == null) {

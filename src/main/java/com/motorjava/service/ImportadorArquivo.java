@@ -1,4 +1,15 @@
-package com.motorjava;
+package com.motorjava.service;
+
+/**
+ * IMPORTADOR DE ARQUIVO
+ * ---------------------------------------------------------
+ * Classe responsável pela lógica de negócio da importação de dados.
+ * Realiza a leitura de arquivos Excel (.xlsx) ou CSV e carrega para o banco de dados.
+ * 
+ * O processo é dividido em duas etapas principais:
+ * 1. Staging: Carga bruta dos dados para uma tabela temporária (stage_stock_tecnico).
+ * 2. ETL: Transformação e carga dos dados da tabela de stage para as tabelas finais.
+ */
 
 import com.motorjava.config.DatabaseConfig;
 import org.apache.poi.ss.usermodel.*;
@@ -20,6 +31,15 @@ public class ImportadorArquivo {
 
     private static final java.nio.charset.Charset CHARSET_LEITURA = java.nio.charset.StandardCharsets.ISO_8859_1;
 
+    /**
+     * Ponto de entrada principal para a execução da carga de dados.
+     * Gerencia a conexão com o banco, transações e o fluxo de execução:
+     * 1. Criar/Limpar tabela de stage
+     * 2. Importar arquivo para stage
+     * 3. Executar ETL (Stage -> Final)
+     * 
+     * @param filePath Caminho absoluto do arquivo a ser importado
+     */
     public static void executarCarga(String filePath) {
         File arquivo = new File(filePath);
         if (!arquivo.exists()) {
@@ -64,6 +84,11 @@ public class ImportadorArquivo {
         }
     }
 
+    /**
+     * Cria a tabela de staging se não existir.
+     * A tabela possui 32 colunas de texto genéricas (col01 a col32) para permitir a importação
+     * de qualquer planilha sem validação de tipos num primeiro momento.
+     */
     private static void criarTabelaStage(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             StringBuilder sql = new StringBuilder("CREATE TABLE IF NOT EXISTS stage_stock_tecnico (id INT AUTO_INCREMENT PRIMARY KEY");
@@ -76,6 +101,12 @@ public class ImportadorArquivo {
         }
     }
 
+    /**
+     * Executa a lógica de transformação de dados (ETL).
+     * Move os dados da tabela temporária (stage) para as tabelas definitivas.
+     * - Passo 1: Carrega 'estock_tecnico' com os dados brutos.
+     * - Passo 2: Carrega 'equipamentos_serializados' com dados enriquecidos e colunas calculadas.
+     */
     private static void processarEtl(Connection conn) throws SQLException {
             // PASSO 1: Carga Bruta (Stage -> estock_tecnico)
             try (Statement st = conn.createStatement()) {
@@ -147,6 +178,11 @@ public class ImportadorArquivo {
             }
     }
 
+    /**
+     * Decide qual método de leitura utilizar (Excel ou CSV) com base na extensão do arquivo.
+     * Tenta ler como Excel primeiro, mas se falhar (ex: arquivo corrompido ou formato inválido),
+     * tenta processar como CSV como fallback.
+     */
     private static boolean processarParaStage(File arquivo, Connection conn) {
         // Query generica para inserir as 32 colunas de texto
         StringBuilder sql = new StringBuilder("INSERT INTO stage_stock_tecnico (");
@@ -175,6 +211,11 @@ public class ImportadorArquivo {
     }
 
     // Métodos de leitura simplificados (apenas Strings)
+    /**
+     * Lê um arquivo Excel (.xlsx) usando Apache POI e insere na tabela de stage.
+     * Utiliza batch processing (lote) para melhor performance, inserindo a cada 1000 linhas.
+     * Todas as células são lidas como String para evitar erros de conversão nesta etapa.
+     */
     private static boolean importarExcel(File arquivo, Connection conn, String sqlInsert) throws Exception {
         try (FileInputStream fis = new FileInputStream(arquivo);
              Workbook workbook = new XSSFWorkbook(fis);

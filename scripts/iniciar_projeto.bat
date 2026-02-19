@@ -4,10 +4,10 @@ title Iniciar MotorJava GUI
 
 :: --- CONFIGURACAO ---
 set "MAVEN_VERSION=3.9.9"
-set "TOOLS_DIR=%~dp0tools"
+set "TOOLS_DIR=%~dp0..\tools"
 set "LOCAL_MAVEN_HOME=%TOOLS_DIR%\apache-maven-%MAVEN_VERSION%"
 set "LOCAL_MVN=%LOCAL_MAVEN_HOME%\bin\mvn.cmd"
-set "SETUP_SCRIPT=%~dp0scripts\setup_maven.ps1"
+set "SETUP_SCRIPT=%~dp0setup_maven.ps1"
 
 :: --- 1. VERIFICAR MAVEN LOCAL ---
 if exist "%LOCAL_MVN%" (
