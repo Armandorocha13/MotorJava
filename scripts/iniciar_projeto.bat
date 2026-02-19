@@ -82,6 +82,8 @@ echo Compilando e executando a aplicacao...
 echo Usando: %MAVEN_CMD%
 echo.
 
+
+cd /d "%~dp0.."
 call "%MAVEN_CMD%" clean compile exec:java -Dexec.mainClass="com.motorjava.GuiApp"
 
 if %ERRORLEVEL% NEQ 0 (

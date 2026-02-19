@@ -44,7 +44,7 @@ public class GuiApp extends JFrame {
     private long startTime;
 
     // ===== CONFIGURAÇÕES DE NEGÓCIO =====
-    private static final String PASTA_STOCK = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\Equipamentos serializados";
+    private static final String PASTA_STOCK = "C:\\Users\\user\\Desktop\\MotorJava\\data";
 
     public GuiApp() {
         startTime = System.currentTimeMillis();
@@ -478,7 +478,7 @@ public class GuiApp extends JFrame {
         
         new Thread(() -> {
             try {
-                String caminhoScript = "C:\\Users\\user\\Desktop\\atualizar_dados.vbs";
+                String caminhoScript = "C:\\Users\\user\\Desktop\\MotorJava\\scripts\\atualizar_dados.vbs";
                 File script = new File(caminhoScript);
                 
                 if (!script.exists()) {

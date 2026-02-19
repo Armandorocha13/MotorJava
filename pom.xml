@@ -80,7 +80,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>com.motorjava.GuiApp</mainClass>
+                    <mainClass>com.motorjava.ui.MainFrame</mainClass>
                 </configuration>
             </plugin>
         </plugins>
