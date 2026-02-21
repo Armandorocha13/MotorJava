@@ -1,8 +1,10 @@
 -- Tabela para armazenamento de pedidos de devolução de material
-CREATE TABLE IF NOT EXISTS pedido_devolucao_material (
+-- Ajustada para bater exatamente com os nomes vindos do Excel (normalizados)
+DROP TABLE IF EXISTS pedido_devolucao_material;
+CREATE TABLE pedido_devolucao_material (
     id INT AUTO_INCREMENT PRIMARY KEY,
     documento VARCHAR(100),
-    data_documento VARCHAR(50), -- Mantendo como VARCHAR para flexibilidade na importação
+    data VARCHAR(50), 
     status VARCHAR(100),
     responsavel VARCHAR(150),
     tecnico VARCHAR(150),
@@ -12,7 +14,7 @@ CREATE TABLE IF NOT EXISTS pedido_devolucao_material (
     fabricante VARCHAR(150),
     quantidade DECIMAL(15,2),
     bem_patrimonial VARCHAR(100),
-    serial_number VARCHAR(100),
+    serial VARCHAR(100),
     estado VARCHAR(100),
     cidade VARCHAR(100),
     almoxarifado VARCHAR(150),

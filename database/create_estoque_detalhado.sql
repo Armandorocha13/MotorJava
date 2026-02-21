@@ -1,5 +1,7 @@
 -- Tabela para armazenamento detalhado de saldo e informações de materiais
-CREATE TABLE IF NOT EXISTS estoque_detalhado (
+-- Ajustada para bater exatamente com os nomes vindos do Excel (normalizados)
+DROP TABLE IF EXISTS estoque_detalhado;
+CREATE TABLE estoque_detalhado (
     id INT AUTO_INCREMENT PRIMARY KEY,
     part_number VARCHAR(100),
     codigo VARCHAR(100),

@@ -268,10 +268,6 @@ public class OnePageService {
         log("Sucesso! Dados do Aniel Manual processados.");
     }
 
-    /**
-     * Processa a carga do WMS (One Page Report)
-     * Monitora a pasta de Downloads, move arquivos e importa para as tabelas
-     */
     public void processarWMS() {
         log("Iniciando monitoramento e processamento WMS...");
 
@@ -280,42 +276,61 @@ public class OnePageService {
         if (!wmsDir.exists())
             wmsDir.mkdirs();
 
-        File[] files = downloadsDir.listFiles();
-        if (files == null)
-            return;
-
-        for (File file : files) {
-            String originalName = file.getName();
-            String nameLower = originalName.toLowerCase();
-
-            // 1. Identifica arquivos do WMS
-            String tableName = "";
-            if (nameLower.contains("estoquematerial")) {
-                tableName = "estoque_detalhado";
-            } else if (nameLower.contains("estoquetecnico") && nameLower.contains("quantitativo")) {
-                tableName = "estoque_tecnico_quantitativo";
-            } else if (nameLower.contains("pedido") && nameLower.contains("devolu") && nameLower.contains("material")) {
-                tableName = "pedido_devolucao_material";
-            }
-
-            if (!tableName.isEmpty()) {
-                try {
-                    String novoNome = padronizarNomeArquivo(originalName);
-                    File destFile = new File(wmsDir, novoNome);
-
-                    // Move para a pasta WMS
-                    Files.move(file.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    log("WMS: Arquivo movido: " + originalName + " -> " + novoNome);
-
-                    // Importa para o Banco
-                    log("📥 [WMS] Importando para tabela: " + tableName);
-                    importarPlanilhaGenerica(destFile, tableName);
-                } catch (Exception e) {
-                    log("Erro ao processar arquivo WMS " + originalName + ": " + e.getMessage());
-                }
+        // 1. Processa novos arquivos da pasta Downloads (Move + Importa)
+        File[] downloadFiles = downloadsDir.listFiles();
+        if (downloadFiles != null) {
+            for (File file : downloadFiles) {
+                processarArquivoWms(file, wmsDir, true);
             }
         }
+
+        // 2. Processa arquivos que já estão na pasta WMS (Garante importação se
+        // faltaram antes)
+        File[] wmsFiles = wmsDir.listFiles();
+        if (wmsFiles != null) {
+            for (File file : wmsFiles) {
+                processarArquivoWms(file, wmsDir, false);
+            }
+        }
+
         log("Processamento WMS concluído.");
+    }
+
+    private void processarArquivoWms(File file, File wmsDir, boolean mover) {
+        String originalName = file.getName();
+        String nameLower = originalName.toLowerCase();
+        String tableName = "";
+
+        // Detecção ultra-resiliente
+        if (nameLower.contains("estoque")
+                && (nameLower.contains("material") || nameLower.equals("estoquematerial.xlsx"))) {
+            tableName = "estoque_detalhado";
+        } else if (nameLower.contains("tecnico")
+                && (nameLower.contains("quantitativo") || nameLower.contains("quant"))) {
+            tableName = "estoque_tecnico_quantitativo";
+        } else if (nameLower.contains("pedido") || nameLower.contains("devolu")
+                || (nameLower.contains("material") && !nameLower.contains("estoque"))) {
+            if (nameLower.contains("pedido") || nameLower.contains("devolu")) {
+                tableName = "pedido_devolucao_material";
+            }
+        }
+
+        if (!tableName.isEmpty()) {
+            try {
+                File finalFile = file;
+                if (mover) {
+                    String novoNome = padronizarNomeArquivo(originalName);
+                    finalFile = new File(wmsDir, novoNome);
+                    Files.move(file.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    log("WMS: Arquivo movido: " + originalName + " -> " + novoNome);
+                }
+
+                log("📥 [WMS] Importando dados para: " + tableName);
+                importarPlanilhaGenerica(finalFile, tableName);
+            } catch (Exception e) {
+                log("Erro no arquivo WMS " + originalName + ": " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -329,35 +344,70 @@ public class OnePageService {
 
             Sheet sheet = workbook.getSheetAt(0);
             Row header = sheet.getRow(0);
-            if (header == null)
+            if (header == null) {
+                log("⚠️ Planilha vazia: " + file.getName());
                 return;
-
-            // Mapeia colunas do Excel
-            List<String> columns = new ArrayList<>();
-            for (int i = 0; i < header.getLastCellNum(); i++) {
-                String colName = ImportadorArquivo.getCellValueAsString(header.getCell(i))
-                        .toLowerCase()
-                        .replace(" ", "_")
-                        .replace("á", "a")
-                        .replace("é", "e")
-                        .replace("í", "i")
-                        .replace("ó", "o")
-                        .replace("ú", "u")
-                        .replace("ã", "a")
-                        .replace("ç", "c");
-                columns.add(colName);
             }
 
-            // Monta SQL dinâmico baseado no cabeçalho
+            // 1. Pega as colunas reais da tabela no Banco de Dados
+            List<String> validDbColumns = new ArrayList<>();
+            try (java.sql.ResultSet rs = conn.getMetaData().getColumns(null, null, tableName, null)) {
+                while (rs.next()) {
+                    validDbColumns.add(rs.getString("COLUMN_NAME").toLowerCase());
+                }
+            }
+
+            if (validDbColumns.isEmpty()) {
+                log("❌ Tabela não encontrada ou sem colunas no banco: " + tableName);
+                return;
+            }
+
+            // 2. Mapeia colunas do Excel e filtra apenas as que existem no Banco
+            List<String> excelColumns = new ArrayList<>();
+            List<Integer> validIndices = new ArrayList<>();
+
+            for (int i = 0; i < header.getLastCellNum(); i++) {
+                String raw = ImportadorArquivo.getCellValueAsString(header.getCell(i));
+                if (raw == null || raw.trim().isEmpty())
+                    continue;
+
+                String colName = raw.toLowerCase()
+                        .trim()
+                        .replace(" ", "_")
+                        .replace("á", "a").replace("à", "a").replace("â", "a").replace("ã", "a")
+                        .replace("é", "e").replace("è", "e").replace("ê", "e")
+                        .replace("í", "i").replace("ì", "i").replace("î", "i")
+                        .replace("ó", "o").replace("ò", "o").replace("ô", "o").replace("õ", "o")
+                        .replace("ú", "u").replace("ù", "u").replace("û", "u")
+                        .replace("ç", "c")
+                        .replaceAll("[^a-z0-9_]", "");
+
+                if (validDbColumns.contains(colName)) {
+                    excelColumns.add(colName);
+                    validIndices.add(i);
+                } else {
+                    log("ℹ️ Ignorando coluna do Excel (não existe no banco): " + raw + " -> " + colName);
+                }
+            }
+
+            if (excelColumns.isEmpty()) {
+                log("❌ Nenhuma coluna compatível encontrada entre Excel e Banco (" + tableName + ")");
+                return;
+            }
+
+            log("📍 Importando colunas: " + excelColumns);
+
+            // 3. Monta SQL com backticks (proteção para nomes como 'data')
             StringBuilder sql = new StringBuilder("INSERT INTO " + tableName + " (");
             StringBuilder values = new StringBuilder("VALUES (");
-            for (int i = 0; i < columns.size(); i++) {
-                sql.append(columns.get(i)).append(i == columns.size() - 1 ? "" : ", ");
-                values.append("?").append(i == columns.size() - 1 ? "" : ", ");
+            for (int i = 0; i < excelColumns.size(); i++) {
+                sql.append("`").append(excelColumns.get(i)).append("`")
+                        .append(i == excelColumns.size() - 1 ? "" : ", ");
+                values.append("?").append(i == excelColumns.size() - 1 ? "" : ", ");
             }
             sql.append(") ").append(values).append(")");
 
-            // Limpa tabela antes de carregar
+            // 4. Limpa e Insere
             try (java.sql.Statement st = conn.createStatement()) {
                 st.execute("TRUNCATE TABLE " + tableName);
             }
@@ -368,8 +418,8 @@ public class OnePageService {
                     if (row.getRowNum() == 0)
                         continue;
 
-                    for (int i = 0; i < columns.size(); i++) {
-                        String val = ImportadorArquivo.getCellValueAsString(row.getCell(i));
+                    for (int i = 0; i < validIndices.size(); i++) {
+                        String val = ImportadorArquivo.getCellValueAsString(row.getCell(validIndices.get(i)));
                         ps.setString(i + 1, val);
                     }
                     ps.addBatch();
@@ -378,11 +428,13 @@ public class OnePageService {
                         ps.executeBatch();
                 }
                 ps.executeBatch();
-                log("🚀 [DB] " + count + " registros inseridos em " + tableName);
+                log("✅ [DB] Sucesso: " + count + " registros em " + tableName);
             }
 
         } catch (Exception e) {
-            log("❌ Falha na importação genérica (" + tableName + "): " + e.getMessage());
+            log("❌ Falha crítica na importação (" + tableName + "): " + e.getMessage());
+            e.printStackTrace();
         }
     }
+
 }
