@@ -89,8 +89,26 @@ public class OutlookService {
             folder.mkdirs();
         }
 
-        File file = new File(folder, fileName);
+        String nomePadronizado = padronizarNome(fileName);
+        File file = new File(folder, nomePadronizado);
         ((MimeBodyPart) bodyPart).saveFile(file);
-        log("Anexo salvo: " + fileName);
+        log("Anexo salvo e padronizado: " + fileName + " -> " + nomePadronizado);
+    }
+
+    private String padronizarNome(String nomeOriginal) {
+        if (nomeOriginal == null)
+            return "arquivo_sem_nome";
+
+        int lastDot = nomeOriginal.lastIndexOf(".");
+        String nome = (lastDot != -1) ? nomeOriginal.substring(0, lastDot) : nomeOriginal;
+        String extensao = (lastDot != -1) ? nomeOriginal.substring(lastDot) : "";
+
+        nome = nome.toLowerCase()
+                .replaceAll("\\d", "")
+                .replaceAll("[\\(\\)\\[\\]\\-_]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        return nome + extensao.toLowerCase();
     }
 }

@@ -22,6 +22,7 @@ public class OnePageService {
     /**
      * Monitora a pasta de Downloads e move arquivos do Outlook para a pasta
      * correta.
+     * Aplica padronização de nomes (minúsculas, sem números).
      */
     public void monitorarDownloads() {
         File downloadsDir = new File(Config.PATH_DOWNLOADS);
@@ -33,18 +34,51 @@ public class OnePageService {
             return;
 
         for (File file : files) {
-            String name = file.getName().toLowerCase();
+            String originalName = file.getName();
+            String nameLower = originalName.toLowerCase();
+
             // Critérios: modem, nel, rj, sp
-            if (name.contains("modem") || name.contains("nel") || name.contains("rj") || name.contains("sp")) {
+            if (nameLower.contains("modem") || nameLower.contains("nel") || nameLower.contains("rj")
+                    || nameLower.contains("sp")) {
                 try {
-                    File dest = new File(Config.PATH_ONEPAGE_OUTLOOK, file.getName());
+                    String novoNome = padronizarNomeArquivo(originalName);
+                    File dest = new File(Config.PATH_ONEPAGE_OUTLOOK, novoNome);
+
                     Files.move(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    log("Arquivo movido para Outlook: " + file.getName());
+                    log("Arquivo movido e padronizado: " + originalName + " -> " + novoNome);
                 } catch (Exception e) {
-                    log("Erro ao mover arquivo: " + file.getName() + " -> " + e.getMessage());
+                    log("Erro ao mover arquivo: " + originalName + " -> " + e.getMessage());
                 }
             }
         }
+    }
+
+    /**
+     * Padroniza o nome do arquivo:
+     * 1. Converte para minúsculas
+     * 2. Remove números
+     * 3. Remove parênteses e caracteres especiais
+     * 4. Remove espaços duplos
+     */
+    private String padronizarNomeArquivo(String nomeOriginal) {
+        // Separa nome da extensão
+        int lastDot = nomeOriginal.lastIndexOf(".");
+        String nome = (lastDot != -1) ? nomeOriginal.substring(0, lastDot) : nomeOriginal;
+        String extensao = (lastDot != -1) ? nomeOriginal.substring(lastDot) : "";
+
+        // 1. Minúsculas
+        nome = nome.toLowerCase();
+
+        // 2. Remove números
+        nome = nome.replaceAll("\\d", "");
+
+        // 3. Remove parênteses e caracteres especiais (mantendo espaços)
+        nome = nome.replaceAll("[\\(\\)\\[\\]\\-_]", " ");
+
+        // 4. Limpa espaços extras
+        nome = nome.replaceAll("\\s+", " ").trim();
+
+        return nome + extensao.toLowerCase();
     }
 
     /**
