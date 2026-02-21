@@ -113,7 +113,7 @@ public class OnePageService {
      */
     public void processarOutlook() {
         log("Iniciando processamento Outlook (One Page)...");
-        monitorarDownloads(); // Garante que tudo que está no download foi movido
+        monitorarDownloads(); // Move novos arquivos do folder Downloads
 
         File dir = new File(Config.PATH_ONEPAGE_OUTLOOK);
         if (!dir.exists()) {
@@ -126,7 +126,26 @@ public class OnePageService {
             return;
 
         for (File file : files) {
-            String nameLower = file.getName().toLowerCase();
+            String fileName = file.getName();
+            String nameLower = fileName.toLowerCase();
+
+            // --- CORREÇÃO RETROATIVA: Se o arquivo já estiver na pasta mas com nome em
+            // caixa alta ou números ---
+            String nomeCorreto = padronizarNomeArquivo(fileName);
+            File finalFile = file;
+
+            if (!fileName.equals(nomeCorreto)) {
+                log("Corrigindo nome de arquivo existente: " + fileName + " -> " + nomeCorreto);
+                File renamedFile = new File(dir, nomeCorreto);
+                try {
+                    Files.move(file.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    finalFile = renamedFile;
+                    nameLower = nomeCorreto.toLowerCase();
+                } catch (Exception e) {
+                    log("Erro ao renomear arquivo existente: " + e.getMessage());
+                }
+            }
+
             // Detecta se o arquivo é de saldo de modem
             if (nameLower.contains("saldo") && (nameLower.contains("modem") || nameLower.contains("modems"))) {
                 String tableName = "";
@@ -137,8 +156,8 @@ public class OnePageService {
                 }
 
                 if (!tableName.isEmpty()) {
-                    log("Processando arquivo: " + file.getName() + " -> " + tableName);
-                    importarTabelaSaldoModem(file, tableName);
+                    log("Processando arquivo: " + finalFile.getName() + " -> " + tableName);
+                    importarTabelaSaldoModem(finalFile, tableName);
                 }
             }
         }
