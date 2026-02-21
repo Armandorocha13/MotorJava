@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class OnePageService {
@@ -178,8 +180,34 @@ public class OnePageService {
 
             Sheet sheet = workbook.getSheetAt(0);
             int rowsProcessed = 0;
+            int colStatus = -1, colMaterial = -1, colUnidade = -1;
 
-            // Transacional: Limpa e reinsere
+            // 1. Identifica as colunas pelo cabeçalho (Linha 0)
+            Row header = sheet.getRow(0);
+            if (header != null) {
+                for (int i = 0; i < header.getLastCellNum(); i++) {
+                    String h = ImportadorArquivo.getCellValueAsString(header.getCell(i)).toLowerCase();
+                    if (h.contains("status"))
+                        colStatus = i;
+                    else if (h.contains("material") || h.contains("descricao"))
+                        colMaterial = i;
+                    else if (h.contains("unidade") || h.contains("quant") || h.contains("saldo"))
+                        colUnidade = i;
+                }
+            }
+
+            // Fallback se não encontrar cabeçalhos específicos: usa ordem 0, 1, 2
+            if (colStatus == -1)
+                colStatus = 0;
+            if (colMaterial == -1)
+                colMaterial = 1;
+            if (colUnidade == -1)
+                colUnidade = 2;
+
+            log("Mapeamento " + tableName + ": Status(col " + colStatus + "), Material(col " + colMaterial
+                    + "), Unidade(col " + colUnidade + ")");
+
+            // 2. Transacional: Limpa e reinsere
             try (java.sql.Statement st = conn.createStatement()) {
                 st.execute("TRUNCATE TABLE " + tableName);
             }
@@ -188,10 +216,9 @@ public class OnePageService {
                 if (row.getRowNum() == 0)
                     continue; // Pula cabeçalho
 
-                // Mapeamento: Status (0), Material (1), Unidade (2)
-                String status = ImportadorArquivo.getCellValueAsString(row.getCell(0));
-                String material = ImportadorArquivo.getCellValueAsString(row.getCell(1));
-                String unidadeStr = ImportadorArquivo.getCellValueAsString(row.getCell(2));
+                String status = ImportadorArquivo.getCellValueAsString(row.getCell(colStatus));
+                String material = ImportadorArquivo.getCellValueAsString(row.getCell(colMaterial));
+                String unidadeStr = ImportadorArquivo.getCellValueAsString(row.getCell(colUnidade));
 
                 if (status.isEmpty() && material.isEmpty())
                     continue;
@@ -199,10 +226,12 @@ public class OnePageService {
                 int unidade = 0;
                 try {
                     if (!unidadeStr.isEmpty()) {
-                        unidade = (int) Double.parseDouble(unidadeStr.replace(",", "."));
+                        // Remove pontos de milhar e troca vírgula por ponto para parser
+                        String cleanUnid = unidadeStr.replace(".", "").replace(",", ".");
+                        unidade = (int) Math.round(Double.parseDouble(cleanUnid));
                     }
                 } catch (Exception e) {
-                    // Se não for número, mantém 0
+                    // Se falhar o parse, mantém 0
                 }
 
                 ps.setString(1, status);
@@ -211,15 +240,19 @@ public class OnePageService {
                 ps.addBatch();
 
                 rowsProcessed++;
-                if (rowsProcessed % 1000 == 0)
+                if (rowsProcessed % 500 == 0)
                     ps.executeBatch();
             }
-            if (rowsProcessed % 1000 != 0)
+
+            if (rowsProcessed > 0) {
                 ps.executeBatch();
-            log("🚀 [DB] " + rowsProcessed + " registros carregados em " + tableName);
+                log("🚀 [DB] Sucesso: " + rowsProcessed + " registros carregados em " + tableName);
+            } else {
+                log("⚠️ [DB] Nenhum dado válido encontrado na planilha " + file.getName());
+            }
 
         } catch (Exception e) {
-            log("❌ Erro ao importar " + file.getName() + ": " + e.getMessage());
+            log("❌ Erro fatal na importação de " + file.getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -236,14 +269,120 @@ public class OnePageService {
     }
 
     /**
-     * Processa a carga do WMS
+     * Processa a carga do WMS (One Page Report)
+     * Monitora a pasta de Downloads, move arquivos e importa para as tabelas
      */
     public void processarWMS() {
-        log("Iniciando processamento WMS (One Page)...");
-        File dir = new File(Config.PATH_ONEPAGE_WMS);
-        log("Lendo pasta: " + dir.getAbsolutePath());
-        // Lógica para: estoquematerial, estoquetecnico quantitativo,
-        // pedido_devolução_material
-        log("Sucesso! Dados do WMS processados.");
+        log("Iniciando monitoramento e processamento WMS...");
+
+        File downloadsDir = new File(Config.PATH_DOWNLOADS);
+        File wmsDir = new File(Config.PATH_ONEPAGE_WMS);
+        if (!wmsDir.exists())
+            wmsDir.mkdirs();
+
+        File[] files = downloadsDir.listFiles();
+        if (files == null)
+            return;
+
+        for (File file : files) {
+            String originalName = file.getName();
+            String nameLower = originalName.toLowerCase();
+
+            // 1. Identifica arquivos do WMS
+            String tableName = "";
+            if (nameLower.contains("estoquematerial")) {
+                tableName = "estoque_detalhado";
+            } else if (nameLower.contains("estoquetecnico") && nameLower.contains("quantitativo")) {
+                tableName = "estoque_tecnico_quantitativo";
+            } else if (nameLower.contains("pedido") && nameLower.contains("devolu") && nameLower.contains("material")) {
+                tableName = "pedido_devolucao_material";
+            }
+
+            if (!tableName.isEmpty()) {
+                try {
+                    String novoNome = padronizarNomeArquivo(originalName);
+                    File destFile = new File(wmsDir, novoNome);
+
+                    // Move para a pasta WMS
+                    Files.move(file.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    log("WMS: Arquivo movido: " + originalName + " -> " + novoNome);
+
+                    // Importa para o Banco
+                    log("📥 [WMS] Importando para tabela: " + tableName);
+                    importarPlanilhaGenerica(destFile, tableName);
+                } catch (Exception e) {
+                    log("Erro ao processar arquivo WMS " + originalName + ": " + e.getMessage());
+                }
+            }
+        }
+        log("Processamento WMS concluído.");
+    }
+
+    /**
+     * Importador genérico que mapeia colunas dinamicamente baseado nos scripts SQL
+     * criados.
+     */
+    private void importarPlanilhaGenerica(File file, String tableName) {
+        try (Connection conn = DatabaseConfig.getConnection();
+                FileInputStream fis = new FileInputStream(file);
+                Workbook workbook = new XSSFWorkbook(fis)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            Row header = sheet.getRow(0);
+            if (header == null)
+                return;
+
+            // Mapeia colunas do Excel
+            List<String> columns = new ArrayList<>();
+            for (int i = 0; i < header.getLastCellNum(); i++) {
+                String colName = ImportadorArquivo.getCellValueAsString(header.getCell(i))
+                        .toLowerCase()
+                        .replace(" ", "_")
+                        .replace("á", "a")
+                        .replace("é", "e")
+                        .replace("í", "i")
+                        .replace("ó", "o")
+                        .replace("ú", "u")
+                        .replace("ã", "a")
+                        .replace("ç", "c");
+                columns.add(colName);
+            }
+
+            // Monta SQL dinâmico baseado no cabeçalho
+            StringBuilder sql = new StringBuilder("INSERT INTO " + tableName + " (");
+            StringBuilder values = new StringBuilder("VALUES (");
+            for (int i = 0; i < columns.size(); i++) {
+                sql.append(columns.get(i)).append(i == columns.size() - 1 ? "" : ", ");
+                values.append("?").append(i == columns.size() - 1 ? "" : ", ");
+            }
+            sql.append(") ").append(values).append(")");
+
+            // Limpa tabela antes de carregar
+            try (java.sql.Statement st = conn.createStatement()) {
+                st.execute("TRUNCATE TABLE " + tableName);
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                int count = 0;
+                for (Row row : sheet) {
+                    if (row.getRowNum() == 0)
+                        continue;
+
+                    for (int i = 0; i < columns.size(); i++) {
+                        String val = ImportadorArquivo.getCellValueAsString(row.getCell(i));
+                        ps.setString(i + 1, val);
+                    }
+                    ps.addBatch();
+                    count++;
+                    if (count % 500 == 0)
+                        ps.executeBatch();
+                }
+                ps.executeBatch();
+                log("🚀 [DB] " + count + " registros inseridos em " + tableName);
+            }
+
+        } catch (Exception e) {
+            log("❌ Falha na importação genérica (" + tableName + "): " + e.getMessage());
+        }
     }
 }
