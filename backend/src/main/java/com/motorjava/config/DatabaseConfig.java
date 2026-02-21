@@ -27,9 +27,12 @@ public class DatabaseConfig {
             } else {
                 properties.load(input); // Carrega as configurações do arquivo
                 System.out.println("🔧 Configuração de Banco de Dados carregada com sucesso.");
+
+                // Explicitly loading the driver to avoid "No suitable driver found"
+                Class.forName("com.mysql.cj.jdbc.Driver");
             }
-        } catch (IOException ex) {
-            System.err.println("❌ Erro ao ler configuração do banco: " + ex.getMessage());
+        } catch (IOException | ClassNotFoundException ex) {
+            System.err.println("❌ Erro ao inicializar driver ou ler configuração: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
@@ -49,7 +52,8 @@ public class DatabaseConfig {
 
     /**
      * Cria e retorna uma nova conexão com o banco de dados.
-     * Quem chamar este método deve usar try-with-resources para fechar a conexão depois.
+     * Quem chamar este método deve usar try-with-resources para fechar a conexão
+     * depois.
      */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(getUrl(), getUser(), getPassword());
