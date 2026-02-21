@@ -48,12 +48,33 @@ public class OnePageService {
                     || nameLower.contains("sp")) {
                 try {
                     String novoNome = padronizarNomeArquivo(originalName);
-                    File dest = new File(Config.PATH_ONEPAGE_OUTLOOK, novoNome);
+                    File destDir = new File(Config.PATH_ONEPAGE_OUTLOOK);
+                    if (!destDir.exists())
+                        destDir.mkdirs();
 
-                    Files.move(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    File destFile = new File(destDir, novoNome);
+
+                    Files.move(file.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     log("Arquivo movido e padronizado: " + originalName + " -> " + novoNome);
+
+                    // Importação imediata se for arquivo de saldo
+                    String novoNomeLower = novoNome.toLowerCase();
+                    if (novoNomeLower.contains("saldo")
+                            && (novoNomeLower.contains("modem") || novoNomeLower.contains("modems"))) {
+                        String tableName = "";
+                        if (novoNomeLower.contains("rj")) {
+                            tableName = "saldo_modem_rj";
+                        } else if (novoNomeLower.contains("sp")) {
+                            tableName = "saldo_modem_sp";
+                        }
+
+                        if (!tableName.isEmpty()) {
+                            log("📥 Importação automática iniciada para: " + novoNome);
+                            importarTabelaSaldoModem(destFile, tableName);
+                        }
+                    }
                 } catch (Exception e) {
-                    log("Erro ao mover arquivo: " + originalName + " -> " + e.getMessage());
+                    log("Erro ao mover/importar arquivo: " + originalName + " -> " + e.getMessage());
                 }
             }
         }
