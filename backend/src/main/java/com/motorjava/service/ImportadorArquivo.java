@@ -86,12 +86,14 @@ public class ImportadorArquivo {
 
     /**
      * Cria a tabela de staging se não existir.
-     * A tabela possui 32 colunas de texto genéricas (col01 a col32) para permitir a importação
+     * A tabela possui 32 colunas de texto genéricas (col01 a col32) para permitir a
+     * importação
      * de qualquer planilha sem validação de tipos num primeiro momento.
      */
     private static void criarTabelaStage(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            StringBuilder sql = new StringBuilder("CREATE TABLE IF NOT EXISTS stage_stock_tecnico (id INT AUTO_INCREMENT PRIMARY KEY");
+            StringBuilder sql = new StringBuilder(
+                    "CREATE TABLE IF NOT EXISTS stage_stock_tecnico (id INT AUTO_INCREMENT PRIMARY KEY");
             // Cria 32 colunas de texto genéricas (col01 a col32)
             for (int i = 1; i <= 32; i++) {
                 sql.append(", col").append(String.format("%02d", i)).append(" TEXT");
@@ -105,16 +107,16 @@ public class ImportadorArquivo {
      * Executa a lógica de transformação de dados (ETL).
      * Move os dados da tabela temporária (stage) para as tabelas definitivas.
      * - Passo 1: Carrega 'estock_tecnico' com os dados brutos.
-     * - Passo 2: Carrega 'equipamentos_serializados' com dados enriquecidos e colunas calculadas.
+     * - Passo 2: Carrega 'equipamentos_serializados' com dados enriquecidos e
+     * colunas calculadas.
      */
     private static void processarEtl(Connection conn) throws SQLException {
-            // PASSO 1: Carga Bruta (Stage -> estock_tecnico)
-            try (Statement st = conn.createStatement()) {
-                st.execute("TRUNCATE TABLE estock_tecnico");
-            }
-            
-            String sqlBruto = 
-                "INSERT INTO estock_tecnico (" +
+        // PASSO 1: Carga Bruta (Stage -> estock_tecnico)
+        try (Statement st = conn.createStatement()) {
+            st.execute("TRUNCATE TABLE estock_tecnico");
+        }
+
+        String sqlBruto = "INSERT INTO estock_tecnico (" +
                 "nome_da_origem, id_do_tecnico, nome_do_tecnico, centro_fisico_do_tecnico, origem_centro_materiais, " +
                 "origem_pool_centro_materiais, sku, descricao_sku, descricao_estado, numero_de_serie, " +
                 "quantidade, id_grupo, descricao_grupo, ultima_modificacao, companhia, " +
@@ -132,20 +134,19 @@ public class ImportadorArquivo {
                 "s.col21, s.col22, s.col23, s.col24, s.col25, " + // 21-25
                 "s.col26 " + // 26. Estado Blockchain
                 "FROM stage_stock_tecnico s";
-                
-            try (Statement st = conn.createStatement()) {
-                int linhas = st.executeUpdate(sqlBruto);
-                System.out.println("✅ [ETL] Dados brutos carregados em 'estock_tecnico': " + linhas + " linhas.");
-            }
 
-            // PASSO 2: Enriquecimento (estock_tecnico -> equipamentos_serializados)
-            try (Statement st = conn.createStatement()) {
-                st.execute("TRUNCATE TABLE equipamentos_serializados");
-            }
+        try (Statement st = conn.createStatement()) {
+            int linhas = st.executeUpdate(sqlBruto);
+            System.out.println("✅ [ETL] Dados brutos carregados em 'estock_tecnico': " + linhas + " linhas.");
+        }
 
-            String sqlFinal = 
-                "INSERT INTO equipamentos_serializados (" +
-                // 25 Colunas Iniciais (iguais à estock_tecnico)
+        // PASSO 2: Enriquecimento (estock_tecnico -> equipamentos_serializados)
+        try (Statement st = conn.createStatement()) {
+            st.execute("TRUNCATE TABLE equipamentos_serializados");
+        }
+
+        String sqlFinal = "INSERT INTO equipamentos_serializados (" +
+        // 25 Colunas Iniciais (iguais à estock_tecnico)
                 "nome_da_origem, id_do_tecnico, nome_do_tecnico, centro_fisico_do_tecnico, origem_centro_materiais, " +
                 "origem_pool_centro_materiais, sku, descricao_sku, descricao_estado, numero_de_serie, " +
                 "quantidade, id_grupo, descricao_grupo, ultima_modificacao, companhia, " +
@@ -169,30 +170,35 @@ public class ImportadorArquivo {
                 "s.col30, " + // Dias
                 "s.col31, " + // Gerente
                 "s.col32, " + // Status Aging (inclui Reversa)
-                "NULL " +     // Expurgo
+                "NULL " + // Expurgo
                 "FROM stage_stock_tecnico s";
 
-            try (Statement st = conn.createStatement()) {
-                int linhas = st.executeUpdate(sqlFinal);
-                System.out.println("✅ [ETL] Dados enriquecidos carregados em 'equipamentos_serializados': " + linhas + " linhas.");
-            }
+        try (Statement st = conn.createStatement()) {
+            int linhas = st.executeUpdate(sqlFinal);
+            System.out.println(
+                    "✅ [ETL] Dados enriquecidos carregados em 'equipamentos_serializados': " + linhas + " linhas.");
+        }
     }
 
     /**
-     * Decide qual método de leitura utilizar (Excel ou CSV) com base na extensão do arquivo.
-     * Tenta ler como Excel primeiro, mas se falhar (ex: arquivo corrompido ou formato inválido),
+     * Decide qual método de leitura utilizar (Excel ou CSV) com base na extensão do
+     * arquivo.
+     * Tenta ler como Excel primeiro, mas se falhar (ex: arquivo corrompido ou
+     * formato inválido),
      * tenta processar como CSV como fallback.
      */
     private static boolean processarParaStage(File arquivo, Connection conn) {
         // Query generica para inserir as 32 colunas de texto
         StringBuilder sql = new StringBuilder("INSERT INTO stage_stock_tecnico (");
-        for (int i=1; i<=32; i++) sql.append("col").append(String.format("%02d", i)).append(",");
-        sql.setLength(sql.length()-1); // remove ultima virgula
+        for (int i = 1; i <= 32; i++)
+            sql.append("col").append(String.format("%02d", i)).append(",");
+        sql.setLength(sql.length() - 1); // remove ultima virgula
         sql.append(") VALUES (");
-        for (int i=1; i<=32; i++) sql.append("?,");
-        sql.setLength(sql.length()-1);
+        for (int i = 1; i <= 32; i++)
+            sql.append("?,");
+        sql.setLength(sql.length() - 1);
         sql.append(")");
-        
+
         String sqlInsert = sql.toString();
 
         if (arquivo.getName().toLowerCase().endsWith(".csv")) {
@@ -213,61 +219,74 @@ public class ImportadorArquivo {
     // Métodos de leitura simplificados (apenas Strings)
     /**
      * Lê um arquivo Excel (.xlsx) usando Apache POI e insere na tabela de stage.
-     * Utiliza batch processing (lote) para melhor performance, inserindo a cada 1000 linhas.
-     * Todas as células são lidas como String para evitar erros de conversão nesta etapa.
+     * Utiliza batch processing (lote) para melhor performance, inserindo a cada
+     * 1000 linhas.
+     * Todas as células são lidas como String para evitar erros de conversão nesta
+     * etapa.
      */
     private static boolean importarExcel(File arquivo, Connection conn, String sqlInsert) throws Exception {
         try (FileInputStream fis = new FileInputStream(arquivo);
-             Workbook workbook = new XSSFWorkbook(fis);
-             PreparedStatement ps = conn.prepareStatement(sqlInsert)) {
+                Workbook workbook = new XSSFWorkbook(fis);
+                PreparedStatement ps = conn.prepareStatement(sqlInsert)) {
 
             Sheet sheet = workbook.getSheet("DADOS");
-            if (sheet == null) sheet = workbook.getSheetAt(0);
+            if (sheet == null)
+                sheet = workbook.getSheetAt(0);
 
             int contador = 0;
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Pula cabeçalho
+                if (row.getRowNum() == 0)
+                    continue; // Pula cabeçalho
 
                 // Verifica linha vazia
-                if (row.getCell(0) == null && row.getCell(1) == null) continue;
+                if (row.getCell(0) == null && row.getCell(1) == null)
+                    continue;
 
                 for (int i = 0; i < 32; i++) {
                     // Mapeamento direto: Coluna 0 do Excel -> col01 da Stage
                     String val = getCellValueAsString(row.getCell(i));
                     ps.setString(i + 1, val);
-                    
+
                     // DEBUG: Verificar se SANTANA está sendo lido na coluna Supervisor (índice 27)
                     if (i == 27 && val != null && val.toUpperCase().contains("SANTANA")) {
-                         System.out.println("⚠️ DEBUG: Encontrado Supervisor SANTANA na linha " + row.getRowNum());
+                        System.out.println("⚠️ DEBUG: Encontrado Supervisor SANTANA na linha " + row.getRowNum());
                     }
                 }
                 ps.addBatch();
                 contador++;
-                if (contador % 1000 == 0) ps.executeBatch();
+                if (contador % 1000 == 0)
+                    ps.executeBatch();
             }
-            if (contador > 0) ps.executeBatch();
-            
+            if (contador > 0)
+                ps.executeBatch();
+
             System.out.println("📥 Excel carregado na Stage: " + contador + " linhas.");
             return true;
         }
     }
 
     private static boolean importarCSV(File arquivo, Connection conn, String sqlInsert) {
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(arquivo), CHARSET_LEITURA));
-             PreparedStatement ps = conn.prepareStatement(sqlInsert)) {
+        try (java.io.BufferedReader br = new java.io.BufferedReader(
+                new java.io.InputStreamReader(new java.io.FileInputStream(arquivo), CHARSET_LEITURA));
+                PreparedStatement ps = conn.prepareStatement(sqlInsert)) {
 
             String linha;
             int contador = 0;
             boolean primeiraLinha = true;
 
             while ((linha = br.readLine()) != null) {
-                if (primeiraLinha) { primeiraLinha = false; continue; }
-                if (linha.trim().isEmpty()) continue;
+                if (primeiraLinha) {
+                    primeiraLinha = false;
+                    continue;
+                }
+                if (linha.trim().isEmpty())
+                    continue;
 
                 String[] colunas = linha.split(";", -1);
                 if (colunas.length < 5) {
                     String[] colunasVirgula = linha.split(",", -1);
-                    if (colunasVirgula.length > colunas.length) colunas = colunasVirgula;
+                    if (colunasVirgula.length > colunas.length)
+                        colunas = colunasVirgula;
                 }
 
                 for (int i = 0; i < 32; i++) {
@@ -282,7 +301,8 @@ public class ImportadorArquivo {
                 }
                 ps.addBatch();
                 contador++;
-                if (contador % 1000 == 0) ps.executeBatch();
+                if (contador % 1000 == 0)
+                    ps.executeBatch();
             }
             ps.executeBatch();
             System.out.println("📥 CSV carregado na Stage: " + contador + " linhas.");
@@ -294,32 +314,43 @@ public class ImportadorArquivo {
         }
     }
 
-    private static String getCellValueAsString(Cell cell) {
-        if (cell == null) return "";
+    public static String getCellValueAsString(Cell cell) {
+        if (cell == null)
+            return "";
         try {
             // Se for fórmula, avalia o resultado cacheado
             if (cell.getCellType() == CellType.FORMULA) {
                 switch (cell.getCachedFormulaResultType()) {
-                    case STRING: return cell.getStringCellValue().trim();
+                    case STRING:
+                        return cell.getStringCellValue().trim();
                     case NUMERIC:
-                        if (DateUtil.isCellDateFormatted(cell)) return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
+                        if (DateUtil.isCellDateFormatted(cell))
+                            return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
                         double val = cell.getNumericCellValue();
                         return (val == (long) val) ? String.format("%d", (long) val) : String.valueOf(val);
-                    case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                    default: return "";
+                    case BOOLEAN:
+                        return String.valueOf(cell.getBooleanCellValue());
+                    default:
+                        return "";
                 }
             }
-            
+
             // Tratamento padrão para outros tipos
             switch (cell.getCellType()) {
-                case STRING: return cell.getStringCellValue().trim();
+                case STRING:
+                    return cell.getStringCellValue().trim();
                 case NUMERIC:
-                    if (DateUtil.isCellDateFormatted(cell)) return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
+                    if (DateUtil.isCellDateFormatted(cell))
+                        return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
                     double val = cell.getNumericCellValue();
                     return (val == (long) val) ? String.format("%d", (long) val) : String.valueOf(val);
-                case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                default: return "";
+                case BOOLEAN:
+                    return String.valueOf(cell.getBooleanCellValue());
+                default:
+                    return "";
             }
-        } catch (Throwable t) { return ""; }
+        } catch (Throwable t) {
+            return "";
+        }
     }
 }

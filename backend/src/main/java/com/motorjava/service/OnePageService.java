@@ -1,9 +1,15 @@
 package com.motorjava.service;
 
 import com.motorjava.config.Config;
+import com.motorjava.config.DatabaseConfig;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
+import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.function.Consumer;
 
 public class OnePageService {
@@ -82,16 +88,100 @@ public class OnePageService {
     }
 
     /**
-     * Processa a carga do Outlook
+     * Processa a carga do Outlook (One Page Report)
      */
     public void processarOutlook() {
         log("Iniciando processamento Outlook (One Page)...");
         monitorarDownloads(); // Garante que tudo que está no download foi movido
 
         File dir = new File(Config.PATH_ONEPAGE_OUTLOOK);
-        log("Lendo pasta: " + dir.getAbsolutePath());
-        // Aqui entrará a lógica de leitura Excel/CSV e INSERT no SQL
-        log("Sucesso! Dados do Outlook processados.");
+        if (!dir.exists()) {
+            log("Erro: Pasta OnePage Outlook não encontrada: " + dir.getAbsolutePath());
+            return;
+        }
+
+        File[] files = dir.listFiles();
+        if (files == null)
+            return;
+
+        for (File file : files) {
+            String nameLower = file.getName().toLowerCase();
+            // Detecta se o arquivo é de saldo de modem
+            if (nameLower.contains("saldo") && (nameLower.contains("modem") || nameLower.contains("modems"))) {
+                String tableName = "";
+                if (nameLower.contains("rj")) {
+                    tableName = "saldo_modem_rj";
+                } else if (nameLower.contains("sp")) {
+                    tableName = "saldo_modem_sp";
+                }
+
+                if (!tableName.isEmpty()) {
+                    log("Processando arquivo: " + file.getName() + " -> " + tableName);
+                    importarTabelaSaldoModem(file, tableName);
+                }
+            }
+        }
+        log("Processamento Outlook concluído.");
+    }
+
+    /**
+     * Lê o arquivo Excel e insere os dados na tabela correspondente.
+     * Estrutura esperada: status, material, unidade
+     */
+    private void importarTabelaSaldoModem(File file, String tableName) {
+        String sql = "INSERT INTO " + tableName + " (status, material, unidade) VALUES (?, ?, ?)";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+                FileInputStream fis = new FileInputStream(file);
+                Workbook workbook = new XSSFWorkbook(fis);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowsProcessed = 0;
+
+            // Transacional: Limpa e reinsere
+            try (java.sql.Statement st = conn.createStatement()) {
+                st.execute("TRUNCATE TABLE " + tableName);
+            }
+
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0)
+                    continue; // Pula cabeçalho
+
+                // Mapeamento: Status (0), Material (1), Unidade (2)
+                String status = ImportadorArquivo.getCellValueAsString(row.getCell(0));
+                String material = ImportadorArquivo.getCellValueAsString(row.getCell(1));
+                String unidadeStr = ImportadorArquivo.getCellValueAsString(row.getCell(2));
+
+                if (status.isEmpty() && material.isEmpty())
+                    continue;
+
+                int unidade = 0;
+                try {
+                    if (!unidadeStr.isEmpty()) {
+                        unidade = (int) Double.parseDouble(unidadeStr.replace(",", "."));
+                    }
+                } catch (Exception e) {
+                    // Se não for número, mantém 0
+                }
+
+                ps.setString(1, status);
+                ps.setString(2, material);
+                ps.setInt(3, unidade);
+                ps.addBatch();
+
+                rowsProcessed++;
+                if (rowsProcessed % 1000 == 0)
+                    ps.executeBatch();
+            }
+            if (rowsProcessed % 1000 != 0)
+                ps.executeBatch();
+            log("🚀 [DB] " + rowsProcessed + " registros carregados em " + tableName);
+
+        } catch (Exception e) {
+            log("❌ Erro ao importar " + file.getName() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
