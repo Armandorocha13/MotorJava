@@ -33,14 +33,15 @@ O sistema funciona em **background**, monitorando a pasta de **Downloads** do us
 ## 📋 Pré-requisitos
 
 - Java JDK 25 (Configurado no script de inicialização)
-- MySQL Server rodando
-- Tabela `estoque_vivo_historico` criada
+- Supabase (PostgreSQL) configurado
+- Estrutura de tabelas criada (ver database/SUPABASE_SETUP.sql)
 
 ## 🚀 Como Iniciar
 
 Apenas execute o arquivo:
-> **iniciar_projeto.bat**
+> **start_project.bat**
 
-Este script irá verificar se o Maven está instalado e, caso contrário, oferecerá a opção de instalar e configurar automaticamente.
+Este script irá iniciar o backend Java e o dashboard React simultaneamente.
 
-E então a aplicação será iniciada.
+Backend rodando na porta 8080.
+Dashboard rodando na porta 5173.

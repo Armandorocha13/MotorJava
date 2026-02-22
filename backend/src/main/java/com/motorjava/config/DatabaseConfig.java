@@ -10,7 +10,7 @@ import java.util.Properties;
 /**
  * CONFIGURAÇÃO DE BANCO DE DADOS
  * ---------------------------------------------------------
- * Classe utilitária para gerenciar a conexão com o MySQL.
+ * Classe utilitária para gerenciar a conexão com o PostgreSQL (Supabase).
  * Ela lê as credenciais (url, usuário, senha) de um arquivo externo
  * chamado 'database.properties', para não deixar senhas fixas no código.
  */
