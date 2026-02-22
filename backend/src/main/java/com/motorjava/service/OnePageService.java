@@ -263,9 +263,39 @@ public class OnePageService {
     public void processarAnielManual() {
         log("Iniciando processamento Aniel Manual...");
         File dir = new File(Config.PATH_ONEPAGE_ANIEL);
-        log("Lendo pasta: " + dir.getAbsolutePath());
-        // Lógica para: conferencia de movimen, saldo estoque, saida de rm e dm
-        log("Sucesso! Dados do Aniel Manual processados.");
+        if (!dir.exists()) {
+            log("❌ Erro: Pasta Aniel não encontrada: " + dir.getAbsolutePath());
+            return;
+        }
+
+        File[] files = dir.listFiles();
+        if (files == null)
+            return;
+
+        for (File file : files) {
+            String fileName = file.getName();
+            if (fileName.startsWith("~$"))
+                continue; // Ignora arquivos temporários do Excel
+
+            String nameLower = fileName.toLowerCase();
+            String tableName = "";
+
+            if (nameLower.contains("saldo") && nameLower.contains("estoque")) {
+                tableName = "aniel_saldo_estoque";
+            } else if (nameLower.contains("saldo") && nameLower.contains("volante")) {
+                tableName = "aniel_saldo_volante";
+            } else if (nameLower.contains("confmaterial")) {
+                tableName = "aniel_conferencia_material";
+            } else if (nameLower.contains("saida") && (nameLower.contains("rm") || nameLower.contains("dm"))) {
+                // Futuro: aniel_saida_rm_dm
+            }
+
+            if (!tableName.isEmpty()) {
+                log("📥 [Aniel] Importando: " + file.getName() + " -> " + tableName);
+                importarPlanilhaGenerica(file, tableName);
+            }
+        }
+        log("✅ Processamento Aniel Manual finalizado.");
     }
 
     public void processarWMS() {
@@ -343,9 +373,26 @@ public class OnePageService {
                 Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheetAt(0);
-            Row header = sheet.getRow(0);
+            Row header = null;
+
+            // Busca o cabeçalho nas primeiras 10 linhas
+            for (int i = 0; i < 10; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null)
+                    continue;
+                int count = 0;
+                for (Cell cell : row) {
+                    if (cell != null && !ImportadorArquivo.getCellValueAsString(cell).trim().isEmpty())
+                        count++;
+                }
+                if (count > 5) { // Se tiver mais de 5 colunas preenchidas, assume ser o cabeçalho
+                    header = row;
+                    break;
+                }
+            }
+
             if (header == null) {
-                log("⚠️ Planilha vazia: " + file.getName());
+                log("⚠️ Cabeçalho não encontrado na planilha: " + file.getName());
                 return;
             }
 
@@ -414,8 +461,9 @@ public class OnePageService {
 
             try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
                 int count = 0;
+                int headerRowNum = header.getRowNum();
                 for (Row row : sheet) {
-                    if (row.getRowNum() == 0)
+                    if (row.getRowNum() <= headerRowNum)
                         continue;
 
                     for (int i = 0; i < validIndices.size(); i++) {

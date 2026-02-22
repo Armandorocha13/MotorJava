@@ -19,7 +19,7 @@ public class Config {
 
     // --- NOVOS CAMINHOS ONE PAGE REPORT ---
     public static final String PATH_ONEPAGE_OUTLOOK = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\OnePageReport\\Outlook";
-    public static final String PATH_ONEPAGE_ANIEL = "\\\\tsclient\\C\\Users\\user\\Documents\\PBI\\BASE DADOS\\ANIEL\\QUERY";
+    public static final String PATH_ONEPAGE_ANIEL = "C:\\Users\\user\\Documents\\PBI\\BASE DADOS\\ANIEL\\QUERY";
     public static final String PATH_ONEPAGE_WMS = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\OnePageReport\\wms";
     public static final String PATH_DOWNLOADS = System.getProperty("user.home") + "\\Downloads";
 
