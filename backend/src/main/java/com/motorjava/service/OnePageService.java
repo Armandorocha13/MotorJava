@@ -448,7 +448,7 @@ public class OnePageService {
             StringBuilder sql = new StringBuilder("INSERT INTO " + tableName + " (");
             StringBuilder values = new StringBuilder("VALUES (");
             for (int i = 0; i < excelColumns.size(); i++) {
-                sql.append("`").append(excelColumns.get(i)).append("`")
+                sql.append("\"").append(excelColumns.get(i)).append("\"")
                         .append(i == excelColumns.size() - 1 ? "" : ", ");
                 values.append("?").append(i == excelColumns.size() - 1 ? "" : ", ");
             }

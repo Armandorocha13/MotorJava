@@ -29,7 +29,7 @@ public class DatabaseConfig {
                 System.out.println("🔧 Configuração de Banco de Dados carregada com sucesso.");
 
                 // Explicitly loading the driver to avoid "No suitable driver found"
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                Class.forName("org.postgresql.Driver");
             }
         } catch (IOException | ClassNotFoundException ex) {
             System.err.println("❌ Erro ao inicializar driver ou ler configuração: " + ex.getMessage());

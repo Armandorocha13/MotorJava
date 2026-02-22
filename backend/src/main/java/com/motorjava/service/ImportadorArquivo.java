@@ -93,12 +93,12 @@ public class ImportadorArquivo {
     private static void criarTabelaStage(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             StringBuilder sql = new StringBuilder(
-                    "CREATE TABLE IF NOT EXISTS stage_stock_tecnico (id INT AUTO_INCREMENT PRIMARY KEY");
+                    "CREATE TABLE IF NOT EXISTS stage_stock_tecnico (id SERIAL PRIMARY KEY");
             // Cria 32 colunas de texto genéricas (col01 a col32)
             for (int i = 1; i <= 32; i++) {
                 sql.append(", col").append(String.format("%02d", i)).append(" TEXT");
             }
-            sql.append(", data_importacao DATETIME DEFAULT CURRENT_TIMESTAMP)");
+            sql.append(", data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
             stmt.execute(sql.toString());
         }
     }
