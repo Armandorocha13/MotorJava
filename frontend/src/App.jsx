@@ -55,7 +55,8 @@ const App = () => {
 
   const vivoCards = [
     { title: 'Atualizar Planilha', subtitle: 'VBS Automation', icon: <FileSpreadsheet className="text-purple-400" />, desc: 'Executa script de atualização via terminal.', endpoint: 'vivo/atualizar' },
-    { title: 'Importar Carga', subtitle: 'SQL Ingestion', icon: <Zap className="text-yellow-400" />, desc: 'Persiste os dados serializados no Banco de Dados.', endpoint: 'vivo/importar' }
+    { title: 'Importar Carga', subtitle: 'SQL Ingestion', icon: <Zap className="text-yellow-400" />, desc: 'Persiste os dados serializados no Banco de Dados.', endpoint: 'vivo/importar' },
+    { title: 'Força SP', subtitle: 'Equipe Técnica', icon: <TrendingUp className="text-green-400" />, desc: 'Importa planilha de força de trabalho SP para o Banco.', endpoint: 'vivo/forca' }
   ];
 
   const currentCards = activeTab === 'ihs' ? ihsCards : vivoCards;

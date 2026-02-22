@@ -264,7 +264,23 @@ CREATE TABLE pedido_devolucao_material (
     data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Views
+-- 6. Tabela Força SP (Vivo)
+DROP TABLE IF EXISTS forca_sp CASCADE;
+CREATE TABLE forca_sp (
+    id SERIAL PRIMARY KEY,
+    sap VARCHAR(255),
+    colaborador VARCHAR(255),
+    sexo VARCHAR(10),
+    funcao VARCHAR(255),
+    coordenador VARCHAR(255),
+    supervisor VARCHAR(255),
+    ctt VARCHAR(100),
+    obs VARCHAR(255),
+    status VARCHAR(100),
+    data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. Views
 CREATE OR REPLACE VIEW vw_estoque_tecnico_resumo AS
 SELECT 
     nome_do_tecnico AS tecnico,
