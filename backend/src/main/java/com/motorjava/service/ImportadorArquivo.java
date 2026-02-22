@@ -178,6 +178,23 @@ public class ImportadorArquivo {
             System.out.println(
                     "✅ [ETL] Dados enriquecidos carregados em 'equipamentos_serializados': " + linhas + " linhas.");
         }
+
+        // PASSO 3: Enriquecimento por Força SP (forca_sp -> equipamentos_serializados)
+        // Atualiza supervisor e coordenador com base no SAP do técnico, garantindo
+        // que a hierarquia reflita sempre a lista de força mais recente.
+        String sqlEnriquecimento = "UPDATE equipamentos_serializados es " +
+                "SET supervisor  = f.supervisor, " +
+                "    coordenador = f.coordenador, " +
+                "    status      = COALESCE(NULLIF(f.status, ''), es.status) " +
+                "FROM forca_sp f " +
+                "WHERE es.id_do_tecnico = f.sap";
+
+        try (Statement st = conn.createStatement()) {
+            int atualizados = st.executeUpdate(sqlEnriquecimento);
+            System.out.println(
+                    "✅ [ETL] Enriquecimento por Força SP: " + atualizados + " técnicos atualizados.");
+        }
+
     }
 
     /**
