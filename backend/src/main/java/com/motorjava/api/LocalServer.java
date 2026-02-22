@@ -31,6 +31,7 @@ public class LocalServer {
         // Endpoints Vivo
         server.createContext("/api/vivo/atualizar", new ActionHandler("vivo_update"));
         server.createContext("/api/vivo/importar", new ActionHandler("vivo_import"));
+        server.createContext("/api/vivo/forca", new ActionHandler("vivo_forca"));
 
         server.createContext("/api/status", exchange -> {
             sendResponse(exchange, "{\"status\": \"online\", \"engine\": \"Motor Java v4.0\"}", 200);
@@ -78,6 +79,10 @@ public class LocalServer {
                     case "vivo_import":
                         vivoService.importarCargaVivo();
                         msg = "Carga Vivo importada.";
+                        break;
+                    case "vivo_forca":
+                        vivoService.importarForcaSP();
+                        msg = "Força SP importada.";
                         break;
                 }
                 sendResponse(exchange, "{\"success\": true, \"msg\": \"" + msg + "\"}", 200);

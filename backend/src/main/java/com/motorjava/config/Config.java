@@ -13,6 +13,7 @@ public class Config {
     // Vivo Aging (Mantendo compatibilidade com o que já existe se necessário)
     public static final String PATH_VIVO_DATA = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\Equipamentos serializados";
     public static final String SCRIPT_VIVO_VBS = "C:\\Users\\user\\Desktop\\MotorJava\\scripts\\atualizar_dados.vbs";
+    public static final String PATH_FORCA_SP = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\forcaSP\\For\u00e7a VIVO SP.xlsx";
 
     // Power Automate Webhook URL
     public static final String POWER_AUTOMATE_WEBHOOK_URL = "https://prod-XX.brazilsouth.logic.azure.com:443/workflows/...";

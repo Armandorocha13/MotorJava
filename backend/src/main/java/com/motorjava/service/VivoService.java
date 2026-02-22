@@ -49,12 +49,30 @@ public class VivoService {
     public void importarCargaVivo() {
         log("Iniciando importação de carga Vivo para o Banco...");
         try {
-            // Aqui chamamos o importador que já existe
             String pathData = Config.PATH_VIVO_DATA + "\\EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx";
             ImportadorArquivo.executarCarga(pathData);
             log("Sucesso: Carga Vivo processada e salva no Banco.");
         } catch (Exception e) {
             log("Erro na importação Vivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Importa a planilha de Força SP para o Banco de Dados.
+     */
+    public void importarForcaSP() {
+        log("Iniciando importação Força SP...");
+        try {
+            File file = new File(Config.PATH_FORCA_SP);
+            if (!file.exists()) {
+                log("❌ ERRO: Arquivo não encontrado: " + Config.PATH_FORCA_SP);
+                return;
+            }
+            OnePageService svc = new OnePageService(logger);
+            svc.importarArquivo(file, "forca_sp");
+            log("✅ Força SP importada com sucesso.");
+        } catch (Exception e) {
+            log("❌ Erro na importação Força SP: " + e.getMessage());
         }
     }
 }

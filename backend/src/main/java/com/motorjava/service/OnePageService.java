@@ -292,7 +292,7 @@ public class OnePageService {
 
             if (!tableName.isEmpty()) {
                 log("📥 [Aniel] Importando: " + file.getName() + " -> " + tableName);
-                importarPlanilhaGenerica(file, tableName);
+                importarArquivo(file, tableName);
             }
         }
         log("✅ Processamento Aniel Manual finalizado.");
@@ -356,7 +356,7 @@ public class OnePageService {
                 }
 
                 log("📥 [WMS] Importando dados para: " + tableName);
-                importarPlanilhaGenerica(finalFile, tableName);
+                importarArquivo(finalFile, tableName);
             } catch (Exception e) {
                 log("Erro no arquivo WMS " + originalName + ": " + e.getMessage());
             }
@@ -367,7 +367,7 @@ public class OnePageService {
      * Importador genérico que mapeia colunas dinamicamente baseado nos scripts SQL
      * criados.
      */
-    private void importarPlanilhaGenerica(File file, String tableName) {
+    public void importarArquivo(File file, String tableName) {
         try (Connection conn = DatabaseConfig.getConnection();
                 FileInputStream fis = new FileInputStream(file);
                 Workbook workbook = new XSSFWorkbook(fis)) {
