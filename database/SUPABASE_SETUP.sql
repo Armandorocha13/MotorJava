@@ -206,8 +206,8 @@ CREATE TABLE estoque_detalhado (
     codigo VARCHAR(100),
     nome VARCHAR(255),
     unidade VARCHAR(50),
-    quantidade DECIMAL(15,2),
-    peso_total DECIMAL(15,2),
+    quantidade VARCHAR(255),
+    peso_total VARCHAR(255),
     status VARCHAR(100),
     estado VARCHAR(100),
     regional VARCHAR(100),
@@ -235,7 +235,7 @@ CREATE TABLE estoque_tecnico_quantitativo (
     codigo VARCHAR(100),
     nome VARCHAR(255),
     unidade VARCHAR(50),
-    quantidade DECIMAL(15,2),
+    quantidade VARCHAR(255),
     tipo VARCHAR(100),
     data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -252,7 +252,7 @@ CREATE TABLE pedido_devolucao_material (
     codigo VARCHAR(100),
     nome VARCHAR(255),
     fabricante VARCHAR(150),
-    quantidade DECIMAL(15,2),
+    quantidade VARCHAR(255),
     bem_patrimonial VARCHAR(100),
     serial VARCHAR(100),
     estado VARCHAR(100),

@@ -397,15 +397,17 @@ public class OnePageService {
             }
 
             // 1. Pega as colunas reais da tabela no Banco de Dados
+            // Para PostgreSQL (Supabase), precisamos especificar o schema 'public'
             List<String> validDbColumns = new ArrayList<>();
-            try (java.sql.ResultSet rs = conn.getMetaData().getColumns(null, null, tableName, null)) {
+            try (java.sql.ResultSet rs = conn.getMetaData().getColumns(null, "public", tableName, null)) {
                 while (rs.next()) {
                     validDbColumns.add(rs.getString("COLUMN_NAME").toLowerCase());
                 }
             }
 
             if (validDbColumns.isEmpty()) {
-                log("❌ Tabela não encontrada ou sem colunas no banco: " + tableName);
+                log("❌ Tabela '" + tableName + "' não encontrada no schema 'public' do Supabase.");
+                log("⚠️  Verifique se a tabela foi criada corretamente no Supabase.");
                 return;
             }
 
@@ -454,9 +456,9 @@ public class OnePageService {
             }
             sql.append(") ").append(values).append(")");
 
-            // 4. Limpa e Insere
+            // 4. Limpa e Insere (no PostgreSQL, RESTART IDENTITY reseta os IDs sequenciais)
             try (java.sql.Statement st = conn.createStatement()) {
-                st.execute("TRUNCATE TABLE " + tableName);
+                st.execute("TRUNCATE TABLE " + tableName + " RESTART IDENTITY");
             }
 
             try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
