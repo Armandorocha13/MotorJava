@@ -11,7 +11,7 @@ public class Config {
     public static final String PATH_OUTLOOK = BASE_PBI + "\\OUTLOOK";
 
     // Vivo Aging (Mantendo compatibilidade com o que já existe se necessário)
-    public static final String PATH_VIVO_DATA = "C:\\Users\\user\\Desktop\\MotorJava\\data";
+    public static final String PATH_VIVO_DATA = "C:\\Users\\user\\Desktop\\ARMANDO POWER BI\\VivoAging\\Equipamentos serializados";
     public static final String SCRIPT_VIVO_VBS = "C:\\Users\\user\\Desktop\\MotorJava\\scripts\\atualizar_dados.vbs";
 
     // Power Automate Webhook URL

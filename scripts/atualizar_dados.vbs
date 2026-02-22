@@ -8,7 +8,7 @@ Dim caminhoArquivo
 Dim fso
 
 ' CONFIGURAÇÃO DO CAMINHO
-caminhoArquivo = "C:\Users\user\Desktop\MotorJava\data\EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx"
+caminhoArquivo = "C:\Users\user\Desktop\ARMANDO POWER BI\VivoAging\Equipamentos serializados\EQUIPAMENTO_SERIALIZADOS_VOLANTE_SP.xlsx"
 
 ' Verifica se o arquivo existe antes de tentar abrir
 Set fso = CreateObject("Scripting.FileSystemObject")
