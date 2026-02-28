@@ -12,7 +12,9 @@ import {
   Database,
   LayoutDashboard,
   FileSpreadsheet,
-  Zap
+  Zap,
+  Router,
+  HardDrive
 } from 'lucide-react';
 
 const App = () => {
@@ -59,7 +61,14 @@ const App = () => {
     { title: 'Força SP', subtitle: 'Equipe Técnica', icon: <TrendingUp className="text-green-400" />, desc: 'Importa planilha de força de trabalho SP para o Banco.', endpoint: 'vivo/forca' }
   ];
 
-  const currentCards = activeTab === 'ihs' ? ihsCards : vivoCards;
+  const emisCards = [
+    { title: 'Renomear Arquivos', subtitle: 'File Organizer', icon: <RefreshCw className="text-orange-400" />, desc: 'Movimenta e renomeia os arquivos na pasta.', endpoint: 'emis/renomear' },
+    { title: 'Importar BD', subtitle: 'Database Ingestion', icon: <HardDrive className="text-red-400" />, desc: 'Importa o relatório para o Banco de Dados.', endpoint: 'emis/importar' }
+  ];
+
+  let currentCards = ihsCards;
+  if (activeTab === 'vivo') currentCards = vivoCards;
+  if (activeTab === 'emis') currentCards = emisCards;
 
   return (
     <div className="min-h-screen bg-[#05070a] text-white flex">
@@ -84,20 +93,27 @@ const App = () => {
           >
             <Zap size={24} />
           </button>
+          <button
+            onClick={() => setActiveTab('emis')}
+            className={`p-4 rounded-xl transition-all ${activeTab === 'emis' ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30' : 'text-gray-600 hover:text-white'}`}
+            title="Relatório EMIS x Terminais"
+          >
+            <Router size={24} />
+          </button>
         </div>
 
         <div className="w-10 h-10 rounded-full bg-gray-900 border border-white/10 flex items-center justify-center">
           <User size={18} className="text-gray-500" />
         </div>
-      </nav>
+      </nav >
 
       {/* --- CONTENT AREA --- */}
-      <main className="flex-grow p-12 lg:p-20 overflow-y-auto">
+      < main className="flex-grow p-12 lg:p-20 overflow-y-auto" >
         <header className="flex justify-between items-end mb-16">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <p className="text-blue-500 text-xs font-bold tracking-[0.3em] uppercase mb-2">Painel de Controle Unificado</p>
             <h1 className="text-4xl font-bold tracking-tight">
-              Relatório {activeTab === 'ihs' ? <span className="text-blue-500">IHS</span> : <span className="text-purple-500">VIVO</span>}
+              Relatório {activeTab === 'ihs' ? <span className="text-blue-500">IHS</span> : activeTab === 'vivo' ? <span className="text-purple-500">VIVO</span> : <span className="text-orange-500">EMIS X TERMINAIS</span>}
             </h1>
           </motion.div>
 
@@ -156,8 +172,8 @@ const App = () => {
             ))}
           </div>
         </motion.div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

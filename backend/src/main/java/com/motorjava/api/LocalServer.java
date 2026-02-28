@@ -2,6 +2,7 @@ package com.motorjava.api;
 
 import com.motorjava.service.OnePageService;
 import com.motorjava.service.VivoService;
+import com.motorjava.service.EmisService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -14,10 +15,12 @@ public class LocalServer {
 
     private final OnePageService onePageService;
     private final VivoService vivoService;
+    private final EmisService emisService;
 
-    public LocalServer(OnePageService onePageService, VivoService vivoService) {
+    public LocalServer(OnePageService onePageService, VivoService vivoService, EmisService emisService) {
         this.onePageService = onePageService;
         this.vivoService = vivoService;
+        this.emisService = emisService;
     }
 
     public void start() throws IOException {
@@ -32,6 +35,10 @@ public class LocalServer {
         server.createContext("/api/vivo/atualizar", new ActionHandler("vivo_update"));
         server.createContext("/api/vivo/importar", new ActionHandler("vivo_import"));
         server.createContext("/api/vivo/forca", new ActionHandler("vivo_forca"));
+
+        // Endpoints Emis
+        server.createContext("/api/emis/renomear", new ActionHandler("emis_renomear"));
+        server.createContext("/api/emis/importar", new ActionHandler("emis_importar"));
 
         server.createContext("/api/status", exchange -> {
             sendResponse(exchange, "{\"status\": \"online\", \"engine\": \"Motor Java v4.0\"}", 200);
@@ -83,6 +90,14 @@ public class LocalServer {
                     case "vivo_forca":
                         vivoService.importarForcaSP();
                         msg = "Força SP importada.";
+                        break;
+                    case "emis_renomear":
+                        emisService.renomearArquivosDaPasta();
+                        msg = "Arquivos EMIS/TERMINAIS renomeados e movidos.";
+                        break;
+                    case "emis_importar":
+                        emisService.importarBancoDados();
+                        msg = "Importação concluída.";
                         break;
                 }
                 sendResponse(exchange, "{\"success\": true, \"msg\": \"" + msg + "\"}", 200);
