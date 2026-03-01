@@ -14,11 +14,12 @@ import {
   FileSpreadsheet,
   Zap,
   Router,
-  HardDrive
+  HardDrive,
+  Truck
 } from 'lucide-react';
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('ihs'); // 'ihs' ou 'vivo'
+  const [activeTab, setActiveTab] = useState('ihs'); // 'ihs', 'vivo', 'emis', 'maquinas'
   const [logs, setLogs] = useState([
     { id: 1, time: '16:35:01', msg: 'Dashboard Unificado v4.5 Ativado.', type: 'info' },
     { id: 2, time: '16:35:05', msg: 'Conectado ao Motor Java Engine.', type: 'success' }
@@ -66,9 +67,14 @@ const App = () => {
     { title: 'Importar BD', subtitle: 'Database Ingestion', icon: <HardDrive className="text-red-400" />, desc: 'Importa o relatório para o Banco de Dados.', endpoint: 'emis/importar' }
   ];
 
+  const maquinasCards = [
+    { title: 'Renomear Arquivos', subtitle: 'File Organizer', icon: <RefreshCw className="text-yellow-400" />, desc: 'Movimenta e renomeia os arquivos de maquinário.', endpoint: 'maquinas/renomear' }
+  ];
+
   let currentCards = ihsCards;
   if (activeTab === 'vivo') currentCards = vivoCards;
   if (activeTab === 'emis') currentCards = emisCards;
+  if (activeTab === 'maquinas') currentCards = maquinasCards;
 
   return (
     <div className="min-h-screen bg-[#05070a] text-white flex">
@@ -100,6 +106,13 @@ const App = () => {
           >
             <Router size={24} />
           </button>
+          <button
+            onClick={() => setActiveTab('maquinas')}
+            className={`p-4 rounded-xl transition-all ${activeTab === 'maquinas' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30' : 'text-gray-600 hover:text-white'}`}
+            title="Relatório Maquinário"
+          >
+            <Truck size={24} />
+          </button>
         </div>
 
         <div className="w-10 h-10 rounded-full bg-gray-900 border border-white/10 flex items-center justify-center">
@@ -113,7 +126,7 @@ const App = () => {
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <p className="text-blue-500 text-xs font-bold tracking-[0.3em] uppercase mb-2">Painel de Controle Unificado</p>
             <h1 className="text-4xl font-bold tracking-tight">
-              Relatório {activeTab === 'ihs' ? <span className="text-blue-500">IHS</span> : activeTab === 'vivo' ? <span className="text-purple-500">VIVO</span> : <span className="text-orange-500">EMIS X TERMINAIS</span>}
+              Relatório {activeTab === 'ihs' ? <span className="text-blue-500">IHS</span> : activeTab === 'vivo' ? <span className="text-purple-500">VIVO</span> : activeTab === 'emis' ? <span className="text-orange-500">EMIS X TERMINAIS</span> : <span className="text-yellow-500">MAQUINÁRIO</span>}
             </h1>
           </motion.div>
 

@@ -3,6 +3,7 @@ package com.motorjava.api;
 import com.motorjava.service.ihs.OnePageService;
 import com.motorjava.service.vivo.VivoService;
 import com.motorjava.service.emis.EmisService;
+import com.motorjava.service.maquinas.MaquinasService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -16,11 +17,14 @@ public class LocalServer {
     private final OnePageService onePageService;
     private final VivoService vivoService;
     private final EmisService emisService;
+    private final MaquinasService maquinasService;
 
-    public LocalServer(OnePageService onePageService, VivoService vivoService, EmisService emisService) {
+    public LocalServer(OnePageService onePageService, VivoService vivoService, EmisService emisService,
+            MaquinasService maquinasService) {
         this.onePageService = onePageService;
         this.vivoService = vivoService;
         this.emisService = emisService;
+        this.maquinasService = maquinasService;
     }
 
     public void start() throws IOException {
@@ -39,6 +43,9 @@ public class LocalServer {
         // Endpoints Emis
         server.createContext("/api/emis/renomear", new ActionHandler("emis_renomear"));
         server.createContext("/api/emis/importar", new ActionHandler("emis_importar"));
+
+        // Endpoints Maquinas
+        server.createContext("/api/maquinas/renomear", new ActionHandler("maquinas_renomear"));
 
         server.createContext("/api/status", exchange -> {
             sendResponse(exchange, "{\"status\": \"online\", \"engine\": \"Motor Java v4.0\"}", 200);
@@ -98,6 +105,10 @@ public class LocalServer {
                     case "emis_importar":
                         emisService.importarBancoDados();
                         msg = "Importação concluída.";
+                        break;
+                    case "maquinas_renomear":
+                        maquinasService.renomearArquivosDaPasta();
+                        msg = "Arquivos de Maquinários renomeados e movidos.";
                         break;
                 }
                 sendResponse(exchange, "{\"success\": true, \"msg\": \"" + msg + "\"}", 200);

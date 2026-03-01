@@ -4,6 +4,7 @@ import com.motorjava.api.LocalServer;
 import com.motorjava.service.ihs.OnePageService;
 import com.motorjava.service.vivo.VivoService;
 import com.motorjava.service.emis.EmisService;
+import com.motorjava.service.maquinas.MaquinasService;
 
 /**
  * MOTOR JAVA - BACKEND ENGINE
@@ -24,13 +25,14 @@ public class MainApp {
         OnePageService onePageService = new OnePageService(logger);
         VivoService vivoService = new VivoService(logger);
         EmisService emisService = new EmisService(logger);
+        MaquinasService maquinasService = new MaquinasService(logger);
 
         try {
-            LocalServer server = new LocalServer(onePageService, vivoService, emisService);
+            LocalServer server = new LocalServer(onePageService, vivoService, emisService, maquinasService);
             server.start();
 
             System.out.println("\n[STATUS] Backend API escutando na porta 8080");
-            System.out.println("[INFO] Comandos disponíveis: /outlook, /aniel, /wms, /vivo/*, /emis/*");
+            System.out.println("[INFO] Comandos disponíveis: /outlook, /aniel, /wms, /vivo/*, /emis/*, /maquinas/*");
         } catch (Exception e) {
             System.err.println("[FALHA] Não foi possível iniciar o motor: " + e.getMessage());
             e.printStackTrace();
