@@ -68,7 +68,8 @@ const App = () => {
   ];
 
   const maquinasCards = [
-    { title: 'Renomear Arquivos', subtitle: 'File Organizer', icon: <RefreshCw className="text-yellow-400" />, desc: 'Movimenta e renomeia os arquivos de maquinário.', endpoint: 'maquinas/renomear' }
+    { title: 'Renomear Arquivos', subtitle: 'File Organizer', icon: <RefreshCw className="text-yellow-400" />, desc: 'Movimenta e renomeia os arquivos de maquinário.', endpoint: 'maquinas/renomear' },
+    { title: 'Importar BD', subtitle: 'Database Ingestion', icon: <HardDrive className="text-yellow-400" />, desc: 'Importa o relatório para o Banco de Dados.', endpoint: 'maquinas/importar' }
   ];
 
   let currentCards = ihsCards;

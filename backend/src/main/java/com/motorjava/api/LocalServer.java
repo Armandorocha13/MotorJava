@@ -46,6 +46,7 @@ public class LocalServer {
 
         // Endpoints Maquinas
         server.createContext("/api/maquinas/renomear", new ActionHandler("maquinas_renomear"));
+        server.createContext("/api/maquinas/importar", new ActionHandler("maquinas_importar"));
 
         server.createContext("/api/status", exchange -> {
             sendResponse(exchange, "{\"status\": \"online\", \"engine\": \"Motor Java v4.0\"}", 200);
@@ -109,6 +110,10 @@ public class LocalServer {
                     case "maquinas_renomear":
                         maquinasService.renomearArquivosDaPasta();
                         msg = "Arquivos de Maquinários renomeados e movidos.";
+                        break;
+                    case "maquinas_importar":
+                        maquinasService.importarBancoDados();
+                        msg = "Importação do Maquinário concluída.";
                         break;
                 }
                 sendResponse(exchange, "{\"success\": true, \"msg\": \"" + msg + "\"}", 200);
