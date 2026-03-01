@@ -1,4 +1,4 @@
-package com.motorjava.service;
+package com.motorjava.service.ihs;
 
 import com.motorjava.config.Config;
 import jakarta.mail.*;

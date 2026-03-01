@@ -1,4 +1,4 @@
-package com.motorjava.service;
+package com.motorjava.service.common;
 
 /**
  * IMPORTADOR DE ARQUIVO

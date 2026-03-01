@@ -1,9 +1,9 @@
 package com.motorjava;
 
 import com.motorjava.api.LocalServer;
-import com.motorjava.service.OnePageService;
-import com.motorjava.service.VivoService;
-import com.motorjava.service.EmisService;
+import com.motorjava.service.ihs.OnePageService;
+import com.motorjava.service.vivo.VivoService;
+import com.motorjava.service.emis.EmisService;
 
 /**
  * MOTOR JAVA - BACKEND ENGINE

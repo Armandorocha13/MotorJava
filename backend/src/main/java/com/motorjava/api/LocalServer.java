@@ -1,8 +1,8 @@
 package com.motorjava.api;
 
-import com.motorjava.service.OnePageService;
-import com.motorjava.service.VivoService;
-import com.motorjava.service.EmisService;
+import com.motorjava.service.ihs.OnePageService;
+import com.motorjava.service.vivo.VivoService;
+import com.motorjava.service.emis.EmisService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;

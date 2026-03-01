@@ -1,4 +1,4 @@
-package com.motorjava.service;
+package com.motorjava.service.ihs;
 
 import com.motorjava.config.Config;
 import com.motorjava.config.DatabaseConfig;
@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import com.motorjava.service.common.ImportadorArquivo;
 
 public class OnePageService {
 

@@ -1,8 +1,11 @@
-package com.motorjava.service;
+package com.motorjava.service.vivo;
 
 import com.motorjava.config.Config;
 import java.io.File;
 import java.util.function.Consumer;
+
+import com.motorjava.service.common.ImportadorArquivo;
+import com.motorjava.service.ihs.OnePageService;
 
 public class VivoService {
     private final Consumer<String> logger;

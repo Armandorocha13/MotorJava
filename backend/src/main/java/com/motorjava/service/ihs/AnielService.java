@@ -1,4 +1,4 @@
-package com.motorjava.service;
+package com.motorjava.service.ihs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
