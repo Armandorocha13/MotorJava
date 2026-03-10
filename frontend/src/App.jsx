@@ -7,13 +7,15 @@ import {
   RefreshCw,
   Trash2,
   HardDrive,
-  Truck
+  Truck,
+  Wrench
 } from 'lucide-react';
 
 const App = () => {
   const [showDashboard, setShowDashboard] = useState(false);
+  const [activeReport, setActiveReport] = useState('maquinas');
   const [logs, setLogs] = useState([
-    { id: 1, time: '16:35:01', msg: 'Dashboard Maquinário v4.5 Ativado.', type: 'info' },
+    { id: 1, time: '16:35:01', msg: 'Dashboard Inicializado.', type: 'info' },
     { id: 2, time: '16:35:05', msg: 'Conectado ao Motor Java Engine.', type: 'success' }
   ]);
 
@@ -47,17 +49,33 @@ const App = () => {
     { title: 'Importar BD', subtitle: 'Database Ingestion', icon: <HardDrive />, desc: 'Importa o relatório para o Banco de Dados.', endpoint: 'maquinas/importar' }
   ];
 
+  const ferramentariaCards = [
+    { title: 'Extrair Dados do Portal', subtitle: 'Portal Extraction', icon: <RefreshCw />, desc: 'Extrai os dados diretamente do Portal Ferramentaria.', endpoint: 'ferramentaria/extrair' },
+    { title: 'Processo a Definir', subtitle: 'Pending Task', icon: <HardDrive />, desc: 'Este processo será definido em breve.', endpoint: 'ferramentaria/processo' }
+  ];
+
   const themes = {
     maquinas: {
+      name: 'MAQUINÁRIO',
       color: '#eab308',
       glow: 'rgba(234, 179, 8, 0.15)',
       text: 'text-yellow-500',
       border: 'border-yellow-500/30',
-      bg: 'bg-yellow-600/20'
+      bg: 'bg-yellow-600/20',
+      cards: maquinasCards
+    },
+    ferramentaria: {
+      name: 'FERRAMENTARIA',
+      color: '#ef4444',
+      glow: 'rgba(239, 68, 68, 0.15)',
+      text: 'text-red-500',
+      border: 'border-red-500/30',
+      bg: 'bg-red-600/20',
+      cards: ferramentariaCards
     }
   };
 
-  const currentTheme = themes.maquinas;
+  const currentTheme = themes[activeReport];
 
   return (
     <div className="min-h-screen bg-[#05070a] text-white overflow-hidden">
@@ -124,10 +142,18 @@ const App = () => {
 
               <div className="flex flex-col gap-8 flex-grow text-center">
                 <button
-                  className={`p-4 rounded-xl transition-all ${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}`}
+                  onClick={() => setActiveReport('maquinas')}
+                  className={`p-4 rounded-xl transition-all ${activeReport === 'maquinas' ? `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}` : 'text-gray-600 hover:text-gray-400'}`}
                   title="Relatório Maquinário"
                 >
                   <Truck size={24} />
+                </button>
+                <button
+                  onClick={() => setActiveReport('ferramentaria')}
+                  className={`p-4 rounded-xl transition-all ${activeReport === 'ferramentaria' ? `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}` : 'text-gray-600 hover:text-gray-400'}`}
+                  title="Portal Ferramentaria"
+                >
+                  <Wrench size={24} />
                 </button>
               </div>
 
@@ -139,10 +165,14 @@ const App = () => {
             {/* --- CONTENT AREA --- */}
             < main className="flex-grow p-12 lg:p-20 overflow-y-auto" >
               <header className="flex justify-between items-end mb-16">
-                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                <motion.div
+                  key={activeReport + '-header'}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                >
                   <p className={`${currentTheme.text} text-xs font-bold tracking-[0.3em] uppercase mb-2`}>AXIS CONTROL</p>
                   <h1 className="text-4xl font-bold tracking-tight">
-                    Relatório <span className={currentTheme.text}>MAQUINÁRIO</span>
+                    {activeReport === 'maquinas' ? 'Relatório' : 'Portal'} <span className={currentTheme.text}>{currentTheme.name}</span>
                   </h1>
                 </motion.div>
 
@@ -154,7 +184,7 @@ const App = () => {
 
               {/* CARDS GRID */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                {maquinasCards.map((card, i) => (
+                {currentTheme.cards.map((card, i) => (
                   <motion.div
                     key={card.title}
                     initial={{ y: 20, opacity: 0 }}

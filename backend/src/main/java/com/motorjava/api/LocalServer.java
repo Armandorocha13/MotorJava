@@ -1,5 +1,6 @@
 package com.motorjava.api;
 
+import com.motorjava.service.ferramentaria.FerramentariaService;
 import com.motorjava.service.maquinas.MaquinasService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -12,9 +13,11 @@ import java.net.InetSocketAddress;
 public class LocalServer {
 
     private final MaquinasService maquinasService;
+    private final FerramentariaService ferramentariaService;
 
-    public LocalServer(MaquinasService maquinasService) {
+    public LocalServer(MaquinasService maquinasService, FerramentariaService ferramentariaService) {
         this.maquinasService = maquinasService;
+        this.ferramentariaService = ferramentariaService;
     }
 
     public void start() throws IOException {
@@ -23,6 +26,10 @@ public class LocalServer {
         // Endpoints Maquinas
         server.createContext("/api/maquinas/renomear", new ActionHandler("maquinas_renomear"));
         server.createContext("/api/maquinas/importar", new ActionHandler("maquinas_importar"));
+
+        // Endpoints Ferramentaria
+        server.createContext("/api/ferramentaria/extrair", new ActionHandler("ferramenta_extrair"));
+        server.createContext("/api/ferramentaria/processo", new ActionHandler("ferramenta_processo"));
 
         server.createContext("/api/status", exchange -> {
             sendResponse(exchange, "{\"status\": \"online\", \"engine\": \"Motor Java v4.0\"}", 200);
@@ -58,6 +65,14 @@ public class LocalServer {
                     case "maquinas_importar":
                         maquinasService.importarBancoDados();
                         msg = "Importação do Maquinário concluída.";
+                        break;
+                    case "ferramenta_extrair":
+                        ferramentariaService.extrairDadosDoPortal();
+                        msg = "Dados de ferramentaria extraidos do portal.";
+                        break;
+                    case "ferramenta_processo":
+                        ferramentariaService.outroProcesso();
+                        msg = "Processo secundario de ferramentaria concluido.";
                         break;
                 }
                 sendResponse(exchange, "{\"success\": true, \"msg\": \"" + msg + "\"}", 200);

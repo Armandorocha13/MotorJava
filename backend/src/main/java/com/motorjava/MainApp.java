@@ -2,6 +2,7 @@ package com.motorjava;
 
 import com.motorjava.api.LocalServer;
 import com.motorjava.service.maquinas.MaquinasService;
+import com.motorjava.service.ferramentaria.FerramentariaService;
 
 /**
  * MOTOR JAVA - BACKEND ENGINE
@@ -20,13 +21,14 @@ public class MainApp {
 
         // Inicialização dos Serviços (Clean Code)
         MaquinasService maquinasService = new MaquinasService(logger);
+        FerramentariaService ferramentariaService = new FerramentariaService(logger);
 
         try {
-            LocalServer server = new LocalServer(maquinasService);
+            LocalServer server = new LocalServer(maquinasService, ferramentariaService);
             server.start();
 
             System.out.println("\n[STATUS] Backend API escutando na porta 8080");
-            System.out.println("[INFO] Comandos disponíveis: /maquinas/*");
+            System.out.println("[INFO] Comandos disponíveis: /maquinas/*, /ferramentaria/*");
         } catch (Exception e) {
             System.err.println("[FALHA] Não foi possível iniciar o motor: " + e.getMessage());
             e.printStackTrace();
