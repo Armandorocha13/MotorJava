@@ -1,8 +1,5 @@
 package com.motorjava.api;
 
-import com.motorjava.service.ihs.OnePageService;
-import com.motorjava.service.vivo.VivoService;
-import com.motorjava.service.emis.EmisService;
 import com.motorjava.service.maquinas.MaquinasService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -14,35 +11,14 @@ import java.net.InetSocketAddress;
 
 public class LocalServer {
 
-    private final OnePageService onePageService;
-    private final VivoService vivoService;
-    private final EmisService emisService;
     private final MaquinasService maquinasService;
 
-    public LocalServer(OnePageService onePageService, VivoService vivoService, EmisService emisService,
-            MaquinasService maquinasService) {
-        this.onePageService = onePageService;
-        this.vivoService = vivoService;
-        this.emisService = emisService;
+    public LocalServer(MaquinasService maquinasService) {
         this.maquinasService = maquinasService;
     }
 
     public void start() throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-
-        // Endpoints One Page
-        server.createContext("/api/outlook", new ActionHandler("outlook"));
-        server.createContext("/api/aniel", new ActionHandler("aniel"));
-        server.createContext("/api/wms", new ActionHandler("wms"));
-
-        // Endpoints Vivo
-        server.createContext("/api/vivo/atualizar", new ActionHandler("vivo_update"));
-        server.createContext("/api/vivo/importar", new ActionHandler("vivo_import"));
-        server.createContext("/api/vivo/forca", new ActionHandler("vivo_forca"));
-
-        // Endpoints Emis
-        server.createContext("/api/emis/renomear", new ActionHandler("emis_renomear"));
-        server.createContext("/api/emis/importar", new ActionHandler("emis_importar"));
 
         // Endpoints Maquinas
         server.createContext("/api/maquinas/renomear", new ActionHandler("maquinas_renomear"));
@@ -75,38 +51,6 @@ public class LocalServer {
             try {
                 String msg = "";
                 switch (action) {
-                    case "outlook":
-                        onePageService.processarOutlook();
-                        msg = "Outlook processado.";
-                        break;
-                    case "aniel":
-                        onePageService.processarAnielManual();
-                        msg = "Aniel processado.";
-                        break;
-                    case "wms":
-                        onePageService.processarWMS();
-                        msg = "WMS processado.";
-                        break;
-                    case "vivo_update":
-                        vivoService.atualizarExcelVivo();
-                        msg = "Excel Vivo atualizado.";
-                        break;
-                    case "vivo_import":
-                        vivoService.importarCargaVivo();
-                        msg = "Carga Vivo importada.";
-                        break;
-                    case "vivo_forca":
-                        vivoService.importarForcaSP();
-                        msg = "Força SP importada.";
-                        break;
-                    case "emis_renomear":
-                        emisService.renomearArquivosDaPasta();
-                        msg = "Arquivos EMIS/TERMINAIS renomeados e movidos.";
-                        break;
-                    case "emis_importar":
-                        emisService.importarBancoDados();
-                        msg = "Importação concluída.";
-                        break;
                     case "maquinas_renomear":
                         maquinasService.renomearArquivosDaPasta();
                         msg = "Arquivos de Maquinários renomeados e movidos.";
