@@ -1,13 +1,17 @@
 @echo off
-echo ============================================================
-echo      INICIANDO SISTEMA MOTOR JAVA + REACT DASHBOARD
-echo ============================================================
+echo ==========================================
+echo       MOTOR JAVA - STARTUP ENGINE
+echo ==========================================
 
-start cmd /k "cd backend && start_backend.bat"
-start cmd /k "cd frontend && npm run dev"
+:: 1. Iniciar Ponte Excel Plus (Python)
+start "AXIS - EXCEL BRIDGE" /D python cmd /c "venv\Scripts\python.exe excel_server.py"
 
-echo.
-echo Tudo certo! 
-echo Backend rodando na porta 8080
-echo Frontend rodando em: http://localhost:5173
-echo ============================================================
+:: 2. Iniciar Backend Java
+start "AXIS - JAVA ENGINE" /D backend cmd /c "mvn exec:java"
+
+:: 3. Iniciar Frontend Vite
+start "AXIS - FRONTEND" /D frontend cmd /c "npm run dev"
+
+echo Axis está subindo em 3 instâncias separadas.
+echo Verifique as janelas de comando abertas.
+pause

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "excel-server": {
+      "command": "C:\\Users\\mando\\OneDrive\\Área de Trabalho\\MotorJava\\python\\venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "excel_mcp",
+        "stdio"
+      ],
+      "env": {
+        "EXCEL_FILES_PATH": "C:\\Users\\mando\\OneDrive\\Área de Trabalho\\planilhas"
+      }
+    }
+  }
+}
