@@ -20,45 +20,7 @@ const App = () => {
     { id: 2, time: '16:35:05', msg: 'Conectado ao Motor Java Engine.', type: 'success' }
   ]);
 
-  // Terminal State for Excel Plus
-  const [terminalInput, setTerminalInput] = useState('');
-  const [terminalHistory, setTerminalHistory] = useState([
-    { id: 1, text: 'AXIS EXCEL PLUS v1.0.0 - AMBIENTE DE EXECUÇÃO MCP', type: 'header' },
-    { id: 2, text: 'Aguardando comandos...', type: 'info' }
-  ]);
 
-  const handleTerminalSubmit = async (e) => {
-    e.preventDefault();
-    if (!terminalInput.trim()) return;
-
-    const cmdText = terminalInput;
-    const newCmd = { id: Date.now(), text: `> ${cmdText}`, type: 'command' };
-    setTerminalHistory(prev => [...prev, newCmd]);
-    setTerminalInput('');
-    
-    // Call Python Bridge
-    const processingId = Date.now() + 1;
-    setTerminalHistory(prev => [...prev, { id: processingId, text: 'Processando comando via Excel Plus (Python)...', type: 'info' }]);
-
-    try {
-      const response = await fetch('http://localhost:5001/api/excel/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: cmdText })
-      });
-      const data = await response.json();
-      
-      setTerminalHistory(prev => [
-        ...prev.filter(i => i.id !== processingId),
-        { id: Date.now() + 2, text: data.success ? `✓ ${data.msg}` : `✗ Erro: ${data.msg}`, type: data.success ? 'success' : 'error' }
-      ]);
-    } catch (err) {
-      setTerminalHistory(prev => [
-        ...prev.filter(i => i.id !== processingId),
-        { id: Date.now() + 3, text: `✗ Servidor Python Offline: ${err.message}`, type: 'error' }
-      ]);
-    }
-  };
 
   const addLog = (msg, type = 'info') => {
     const newLog = {
@@ -95,6 +57,12 @@ const App = () => {
     { title: 'Processo a Definir', subtitle: 'Pending Task', icon: <HardDrive />, desc: 'Este processo será definido em breve.', endpoint: 'ferramentaria/processo' }
   ];
 
+  const toolkitCards = [
+    { title: 'Importar para BD', subtitle: 'PostgreSQL Ingestion', icon: <HardDrive />, desc: 'Importa os dados de ferramentas atualizados para o sistema.', endpoint: 'toolkit/importar' },
+    { title: 'Extrair XLSX', subtitle: 'Excel Generation', icon: <FileSpreadsheet />, desc: 'Gera e exporta o arquivo consolidado de Toolkit.', endpoint: 'toolkit/extrair' },
+    { title: 'Atualizar Power BI', subtitle: 'Analytics Sync', icon: <RefreshCw />, desc: 'Sincroniza os dados locais com o dashboard do Power BI.', endpoint: 'toolkit/pbi' }
+  ];
+
   const themes = {
     maquinas: {
       name: 'MAQUINÁRIO',
@@ -114,17 +82,14 @@ const App = () => {
       bg: 'bg-red-600/20',
       cards: ferramentariaCards
     },
-    excelPlus: {
-      name: 'EXCEL PLUS',
-      color: '#22c55e',
-      glow: 'rgba(34, 197, 94, 0.15)',
-      text: 'text-green-500',
-      border: 'border-green-500/30',
-      bg: 'bg-green-600/20',
-      cards: [
-        { title: 'Criar Planilha', subtitle: 'New Spreadsheet', icon: <RefreshCw />, desc: 'Cria uma nova planilha Excel com cabeçalhos padrão.', endpoint: 'excel/criar' },
-        { title: 'Gerar Relatório', subtitle: 'Data Analysis', icon: <HardDrive />, desc: 'Processa dados e gera um relatório detalhado em Excel.', endpoint: 'excel/relatorio' }
-      ]
+    toolkit: {
+      name: 'TOOLKIT',
+      color: '#f97316',
+      glow: 'rgba(249, 115, 22, 0.15)',
+      text: 'text-orange-500',
+      border: 'border-orange-500/30',
+      bg: 'bg-orange-600/20',
+      cards: toolkitCards
     }
   };
 
@@ -209,9 +174,9 @@ const App = () => {
                   <Wrench size={24} />
                 </button>
                 <button
-                  onClick={() => setActiveReport('excelPlus')}
-                  className={`p-4 rounded-xl transition-all ${activeReport === 'excelPlus' ? `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}` : 'text-gray-600 hover:text-gray-400'}`}
-                  title="Excel Plus"
+                  onClick={() => setActiveReport('toolkit')}
+                  className={`p-4 rounded-xl transition-all ${activeReport === 'toolkit' ? `${currentTheme.bg} ${currentTheme.text} border ${currentTheme.border}` : 'text-gray-600 hover:text-gray-400'}`}
+                  title="Controle de Toolkit"
                 >
                   <FileSpreadsheet size={24} />
                 </button>
@@ -232,7 +197,7 @@ const App = () => {
                 >
                   <p className={`${currentTheme.text} text-xs font-bold tracking-[0.3em] uppercase mb-2`}>AXIS CONTROL</p>
                   <h1 className="text-4xl font-bold tracking-tight">
-                    {activeReport === 'maquinas' ? 'Relatório' : 'Portal'} <span className={currentTheme.text}>{currentTheme.name}</span>
+                    {activeReport === 'maquinas' ? 'Relatório' : activeReport === 'toolkit' ? 'Controle de' : 'Portal'} <span className={currentTheme.text}>{currentTheme.name}</span>
                   </h1>
                 </motion.div>
 
@@ -242,61 +207,6 @@ const App = () => {
                 </div>
               </header>
 
-              {activeReport === 'excelPlus' ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-black/80 border border-green-500/30 rounded-2xl h-[600px] flex flex-col overflow-hidden backdrop-blur-2xl shadow-[0_0_50px_rgba(34,197,94,0.1)]"
-                >
-                  {/* Terminal Header */}
-                  <div className="bg-green-500/10 px-6 py-3 border-b border-green-500/20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
-                        <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-                        <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
-                      </div>
-                      <span className="text-green-500/70 text-[10px] font-bold tracking-[0.2em] uppercase ml-4">mcp-server@axis: ~/excel-plus</span>
-                    </div>
-                    <Terminal size={14} className="text-green-500/50" />
-                  </div>
-
-                  {/* Terminal Output */}
-                  <div className="flex-grow p-8 font-mono text-sm overflow-y-auto custom-scroll space-y-2 selection:bg-green-500/30">
-                    {terminalHistory.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`
-                          ${item.type === 'header' ? 'text-green-400 font-bold border-b border-green-500/20 pb-2 mb-4' : ''}
-                          ${item.type === 'command' ? 'text-white' : ''}
-                          ${item.type === 'success' ? 'text-green-400' : ''}
-                          ${item.type === 'info' ? 'text-green-500/60' : ''}
-                          ${item.type === 'error' ? 'text-red-400' : ''}
-                        `}
-                      >
-                        {item.text}
-                      </div>
-                    ))}
-                    <div className="h-4"></div>
-                  </div>
-
-                  {/* Terminal Input */}
-                  <form onSubmit={handleTerminalSubmit} className="p-6 bg-black/40 border-t border-green-500/20">
-                    <div className="flex items-center gap-3 text-green-500">
-                      <span className="font-bold">➜</span>
-                      <span className="text-green-500/50 font-bold">~</span>
-                      <input
-                        type="text"
-                        value={terminalInput}
-                        onChange={(e) => setTerminalInput(e.target.value)}
-                        placeholder="Digite um comando para o MCP (ex: criar planilha vendas.xlsx)..."
-                        className="flex-grow bg-transparent border-none outline-none text-green-400 placeholder:text-green-900/50 font-mono"
-                        autoFocus
-                      />
-                    </div>
-                  </form>
-                </motion.div>
-              ) : (
                 <>
                   {/* CARDS GRID */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -348,7 +258,6 @@ const App = () => {
                     </div>
                   </motion.div>
                 </>
-              )}
             </main >
           </motion.div>
         )}

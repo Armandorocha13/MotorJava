@@ -24,11 +24,10 @@ O sistema funciona em **background**, monitorando a pasta de **Downloads** do us
 ## 🛠️ Como Funciona
 
 1. **Monitoramento**: O `ServicoIngestao` observa a pasta `C:\Users\%USERNAME%\Downloads`.
-2. **Triagem**: Assim que um arquivo como `stock_vivo_atual.xlsx` ou `001.xlsx` chega, ele é detectado.
-3. **Padronização**: O arquivo é renomeado sequencialmente (ex: `005.xlsx`) e movido para:
-   - `Desktop\ARMANDO POWER BI\VivoAging\StockTecnicos`
-4. **Carga**: O `ImportadorArquivo` lê o Excel e insere os dados na tabela `estoque_vivo_historico` do MySQL.
-5. **Dashboard**: A interface (`GuiApp`) mostra o progresso visualmente.
+2. **Triagem**: Assim que novos arquivos chegam, eles são detectados e validados.
+3. **Padronização**: O arquivo é processado e movido para as pastas de destino configuradas.
+4. **Carga**: O `ImportadorArquivo` lê o Excel e insere os dados no Banco de Dados (MySQL/PostgreSQL).
+5. **Dashboard**: A interface moderna mostra o status dos processos e logs em tempo real.
 
 ## 📋 Pré-requisitos
 

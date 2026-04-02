@@ -31,40 +31,6 @@ public class HttpService {
     }
 
     /**
-     * Realiza um GET autenticado com o Token do Aniel.
-     */
-    public CompletableFuture<HttpResponse<String>> getAnielRequest(String url, String token) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("token", token)
-                .header("Content-Type", "application/json")
-                .GET()
-                .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    /**
-     * Realiza um POST autenticado com os cabeçalhos em PascalCase (Token, Usuario,
-     * Senha).
-     */
-    public CompletableFuture<HttpResponse<String>> postAnielRequest(String url, String token, String user, String pass,
-            String jsonBody) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Token", token)
-                .header("Usuario", user)
-                .header("Senha", pass)
-                .header("Content-Type", "application/json")
-                .header("Accept", "*/*")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    /**
      * Template para chamadas GET padrão.
      */
     public CompletableFuture<HttpResponse<String>> getRequest(String url) {

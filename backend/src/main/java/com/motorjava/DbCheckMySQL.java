@@ -7,7 +7,7 @@ import java.sql.Statement;
 
 public class DbCheckMySQL {
     public static void main(String[] args) {
-        String dbUrlBase = "jdbc:mysql://localhost:3306/vivo_aging";
+        String dbUrlBase = "jdbc:mysql://localhost:3306/motor_java";
         String user = "root";
         String p = "";
 
