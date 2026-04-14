@@ -105,6 +105,13 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.15.2</version>
         </dependency>
+
+        <!-- Jacob for Excel VBA automation -->
+        <dependency>
+            <groupId>com.hynnet</groupId>
+            <artifactId>jacob</artifactId>
+            <version>1.21</version>
+        </dependency>
     </dependencies>
 
     <build>

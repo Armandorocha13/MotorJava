@@ -48,8 +48,7 @@ const App = () => {
   };
 
   const maquinasCards = [
-    { title: 'Renomear Arquivos', subtitle: 'File Organizer', icon: <RefreshCw />, desc: 'Movimenta e renomeia os arquivos de maquinário.', endpoint: 'maquinas/renomear' },
-    { title: 'Importar BD', subtitle: 'Database Ingestion', icon: <HardDrive />, desc: 'Importa o relatório para o Banco de Dados.', endpoint: 'maquinas/importar' }
+    { title: 'Atualizar Base de dados', subtitle: 'File Organizer', icon: <RefreshCw />, desc: 'Movimenta e renomeia os arquivos de maquinário.', endpoint: 'maquinas/renomear' }
   ];
 
   const ferramentariaCards = [
