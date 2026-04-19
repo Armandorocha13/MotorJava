@@ -1,39 +1,29 @@
 package com.motorjava;
 
-import com.motorjava.api.LocalServer;
+import com.motorjava.gui.ModernDashboard;
 import com.motorjava.service.maquinas.MaquinasService;
-import com.motorjava.service.ferramentaria.FerramentariaService;
-import com.motorjava.service.common.ToolkitService;
+import javax.swing.SwingUtilities;
 
 /**
- * MOTOR JAVA - BACKEND ENGINE
- * Headless entry point for the automation system.
+ * MOTOR JAVA - NATIVE APPLICATION
+ * Local entry point for the automation system.
  */
 public class MainApp {
     public static void main(String[] args) {
-        System.out.println("   _____                 ___ ___");
-        System.out.println("  |     | ___  _ _  _ _ |   |   | ___  _ _  ___");
-        System.out.println("  | | | || . ||  _||  _||- -|- -|| . || | || . |");
-        System.out.println("  |_|_|_||___||_|  |_|  |___|___||_|  |\\_/ |___|");
-        System.out.println("  MOTOR JAVA SYSTEM v4.0 - BACKEND ACTIVE\n");
-
-        // Logger compartilhado para o console
+        // Logger compartilhado para o console e GUI
         java.util.function.Consumer<String> logger = msg -> System.out.println("[MOTOR] " + msg);
 
-        // Inicialização dos Serviços (Clean Code)
+        // Inicialização dos Serviços
         MaquinasService maquinasService = new MaquinasService(logger);
-        FerramentariaService ferramentariaService = new FerramentariaService(logger);
-        ToolkitService toolkitService = new ToolkitService(logger);
 
-        try {
-            LocalServer server = new LocalServer(maquinasService, ferramentariaService, toolkitService);
-            server.start();
-
-            System.out.println("\n[STATUS] Backend API escutando na porta 8080");
-            System.out.println("[INFO] Comandos disponíveis: /maquinas/*, /ferramentaria/*, /toolkit/*");
-        } catch (Exception e) {
-            System.err.println("[FALHA] Não foi possível iniciar o motor: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // Launch GUI
+        SwingUtilities.invokeLater(() -> {
+            ModernDashboard dashboard = new ModernDashboard(maquinasService);
+            dashboard.setVisible(true);
+        });
+        
+        System.out.println("MOTOR JAVA SYSTEM v4.0 - NATIVE CORE RE-INITIALIZED");
     }
 }
+
+

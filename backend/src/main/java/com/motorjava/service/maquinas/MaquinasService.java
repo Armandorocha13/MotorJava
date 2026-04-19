@@ -2,27 +2,16 @@ package com.motorjava.service.maquinas;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.function.Consumer;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import com.jacob.activeX.ActiveXComponent;
 import com.jacob.com.Dispatch;
 import com.jacob.com.Variant;
-
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import com.motorjava.config.DatabaseConfig;
 
 public class MaquinasService {
     private final Consumer<String> logger;
@@ -36,119 +25,105 @@ public class MaquinasService {
     }
 
     public void renomearArquivosDaPasta() throws IOException {
-        logger.accept("Varrer pasta de Downloads: " + downloadsDirStr);
         File dir = new File(downloadsDirStr);
-        if (!dir.exists() || !dir.isDirectory()) {
-            throw new IOException("Pasta de Downloads não encontrada: " + downloadsDirStr);
-        }
+        if (!dir.exists() || !dir.isDirectory()) return;
 
         File targetFolder = new File(targetDirStr);
-        if (!targetFolder.exists()) {
-            logger.accept("Criando pasta destino: " + targetDirStr);
-            Files.createDirectories(targetFolder.toPath());
-        }
+        if (!targetFolder.exists()) Files.createDirectories(targetFolder.toPath());
 
         File[] files = dir.listFiles();
-        if (files == null) {
-            return;
-        }
+        if (files == null) return;
 
-        int count = 0;
         for (File file : files) {
-            if (file.isFile()) {
-                String nome = file.getName().toLowerCase();
-                // palavras-chaves: ffa controle locacao
-                if (nome.contains("ffa") && nome.contains("controle")
-                        && (nome.contains("locacao") || nome.contains("locação"))) {
-                    moverERenomear(file, "MAQUINAS LOCADAS E PROPRIAS");
-                    count++;
-                }
+            String nome = file.getName().toLowerCase();
+            if (nome.contains("ffa") && nome.contains("controle") && (nome.contains("locacao") || nome.contains("locação"))) {
+                moverERenomear(file, "MAQUINAS LOCADAS E PROPRIAS");
             }
-        }
-
-        if (count == 0) {
-            logger.accept("Nenhum arquivo 'ffa controle locacao' encontrado em Downloads.");
-        } else {
-            logger.accept(count + " arquivo(s) processado(s) com sucesso para o relatório de Maquinários.");
         }
     }
 
     private void moverERenomear(File sourceFile, String novoNomeBase) throws IOException {
         String originalName = sourceFile.getName();
-        String extensao = "";
-        int i = originalName.lastIndexOf('.');
-        if (i > 0) {
-            extensao = originalName.substring(i);
-        }
-
-        String novoNome = novoNomeBase + extensao;
-        Path targetPath = Paths.get(targetDirStr, novoNome);
-
-        logger.accept("Movendo arquivo " + originalName + " para " + targetPath.toString());
+        String extensao = originalName.substring(originalName.lastIndexOf('.'));
+        Path targetPath = Paths.get(targetDirStr, novoNomeBase + extensao);
         Files.move(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public void atualizarBaseMaquinario() throws Exception {
-        // INFORMAÇÕES CONFIGURADAS PELO USUÁRIO
         String caminhoOriginal = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\BASE DE DADOS\\Contagem de dias maquinario.xlsm";
         String pastaBackup = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\Backup\\";
-        String nomeMacro = "maquinarios"; // NOME DA MACRO NO EXCEL
+        String nomeMacro = "maquinarios";
 
-        logger.accept("Iniciando processo de Atualização de Base via VBA...");
         ActiveXComponent excel = null;
         Dispatch wb = null;
         
         try {
-            // 1. BACKUP AUTOMÁTICO
+            // 1. GERAR BACKUP COM DATA E HORA ANTES DE TUDO
             File backupDir = new File(pastaBackup);
             if (!backupDir.exists()) backupDir.mkdirs();
 
-            Path origem = Paths.get(caminhoOriginal);
-            Path destino = Paths.get(pastaBackup + "Backup_Antes_Macro.xlsm");
+            String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+            String nomeBackup = "Backup_Maquinario_" + timeStamp + ".xlsm";
+            Path destinoBackup = Paths.get(pastaBackup, nomeBackup);
             
-            logger.accept("Gerando backup em: " + destino.toString());
-            Files.copy(origem, destino, StandardCopyOption.REPLACE_EXISTING);
+            logger.accept("Gerando backup em: " + destinoBackup.toString());
+            Files.copy(Paths.get(caminhoOriginal), destinoBackup, StandardCopyOption.REPLACE_EXISTING);
 
-            // 2. INICIAR EXCEL (Motor VBA)
+            // 2. INICIAR EXCEL
             logger.accept("Abrindo Excel (instância Jacob)...");
             excel = new ActiveXComponent("Excel.Application");
-            excel.setProperty("Visible", new Variant(false)); 
-            excel.setProperty("DisplayAlerts", new Variant(false)); // EVITA TRAVAMENTOS POR POP-UPS
             
+            // Força visível para interagir caso ocorra o erro estrutural de nomes
+            excel.setProperty("Visible", new Variant(true)); 
+            excel.setProperty("DisplayAlerts", new Variant(false)); 
+            
+            logger.accept("Tentando abrir arquivo original...");
             Dispatch workbooks = excel.getProperty("Workbooks").toDispatch();
+            
+            // SE TRAVAR AQUI, VOCÊ CLICA NO 'OK' DO NOME NO EXCEL
             wb = Dispatch.call(workbooks, "Open", caminhoOriginal).toDispatch();
+            
+            logger.accept("Arquivo aberto! Iniciando limpeza automatica de conflitos...");
 
-            // 2.1 GARANTIR QUE ESTÁ NA ABA CORRETA
-            logger.accept("Selecionando aba 'BASE DE DADOS'...");
-            Dispatch sheets = excel.getProperty("Sheets").toDispatch();
+            // Limpeza agressiva de nomes internos para que na próxima vez não peça nome
+            try {
+                Dispatch namesObj = Dispatch.get(wb, "Names").toDispatch();
+                int count = Dispatch.get(namesObj, "Count").toInt();
+                for (int i = count; i >= 1; i--) {
+                    try {
+                        Dispatch name = Dispatch.call(namesObj, "Item", i).toDispatch();
+                        Dispatch.call(name, "Delete");
+                    } catch (Exception e1) {}
+                }
+                logger.accept("Limpeza de " + count + " nomes concluída.");
+            } catch (Exception e) {}
+
+            // 2.2 GARANTIR QUE ESTÁ NA ABA CORRETA
+            Dispatch sheets = Dispatch.get(wb, "Sheets").toDispatch();
             Dispatch targetSheet = Dispatch.call(sheets, "Item", "BASE DE DADOS").toDispatch();
             Dispatch.call(targetSheet, "Select");
 
-            // 3. EXECUTAR A GRAVAÇÃO
+            // 3. EXECUTAR A MACRO
             logger.accept("Executando Macro: " + nomeMacro);
             Dispatch.call(excel, "Run", nomeMacro);
+            Thread.sleep(3000);
 
-            // 4. SALVAR E FINALIZAR
-            logger.accept("Salvando alterações...");
+            // 4. SALVAR A BASE ORIGINAL (LIMPA E ATUALIZADA)
+            logger.accept("Salvando alterações na base original...");
             Dispatch.call(wb, "Save");
+            Thread.sleep(1000);
 
-            logger.accept("✓ Sucesso: Backup gerado e Base atualizada!");
+            logger.accept("✓ Sucesso: Backup gerado e Base original atualizada!");
             
         } catch (Exception e) {
-            logger.accept("x Erro no processo VBA: " + e.getMessage());
+            logger.accept("x Erro no processo: " + e.getMessage());
             throw e;
         } finally {
             try {
-                if (wb != null) {
-                    Dispatch.call(wb, "Close", new Variant(false));
-                }
-                if (excel != null) {
-                    excel.invoke("Quit", new Variant[] {});
-                }
-                logger.accept("Excel encerrado com segurança.");
-            } catch (Exception ex) {
-                // Silencioso no encerramento
-            }
+                if (wb != null) Dispatch.call(wb, "Close", new Variant(false));
+                if (excel != null) excel.invoke("Quit", new Variant[] {});
+                logger.accept("Processo finalizado.");
+            } catch (Exception ex) {}
         }
     }
 }

@@ -1,46 +1,35 @@
-# 🚀 Módulo de Ingestão e Monitoramento (Motor Java)
+# AXIS CONTROL - MOTOR JAVA v4.2
 
-Este projeto é responsável por gerenciar a entrada de arquivos (Excel/CSV) e automaticamente processá-los e inseri-los no banco de dados.
+O **AXIS CONTROL** é uma aplicação desktop nativa desenvolvida em Java para automação de relatórios e processamento de dados via macros Excel (VBA). Esta versão (v4.x) marca a migração completa de uma arquitetura Web/API para uma aplicação local autossuficiente, garantindo maior estabilidade, segurança e performance.
 
-O sistema funciona em **background**, monitorando a pasta de **Downloads** do usuário.
+## 🚀 Principais Funcionalidades
 
-## 📂 Estrutura do Projeto
+- **Dashboard Nativo**: Interface gráfica moderna construída com Java Swing e FlatLaf.
+- **Página de Entrada (Splash)**: Tela de boas-vindas com branding exclusivo (Fonte Barrio).
+- **Automação VBA Silenciosa**: Execução de macros Excel via biblioteca Jacob com supressão total de alertas.
+- **Backup Inteligente**: Geração automática de cópias de segurança com timestamp antes de cada processamento.
+- **Limpeza de Conflitos**: Rotina automática para deletar nomes de intervalos corrompidos ou em conflito no Excel (`_FilterDatabase`).
+- **Design Premium**: Interface minimalista com tema "Light Mode" (Branco e Preto) e cantos arredondados.
 
-```
-/
-├── SIMULADO_PROJETO/        # (Legado) Estrutura antiga de pastas
-├── src/main/java/           # Código Fonte Java
-│   └── com/motorjava/
-│       ├── GuiApp.java              # 🎨 Interface Gráfica (Dashboard)
-│       ├── ServicoIngestao.java     # 🧠 Serviço de Monitoramento (Watcher)
-│       ├── ImportadorArquivo.java   # 💾 Lógica de Banco de Dados (ETL)
-│       └── config/
-│           └── DatabaseConfig.java  # ⚙️ Configuração de Conexão MySQL
-├── resources/               # Arquivos de recurso
-│   └── database.properties  # Senhas e URLs do Banco
-└── INICIAR_DASHBOARD.bat    # ▶️ Clique duplo aqui para rodar
-```
+## 🛠️ Tecnologias Utilizadas
 
-## 🛠️ Como Funciona
+- **Linguagem**: Java 17 (OpenJDK).
+- **Interface (GUI)**: Swing + FlatLaf (Look and Feel).
+- **Automação**: Jacob (Java COM Bridge) para integração com MS Excel.
+- **Gerenciamento**: Apache Maven 3.9.9.
+- **Tipografia**: Barrio (Google Fonts) para identidade visual.
 
-1. **Monitoramento**: O `ServicoIngestao` observa a pasta `C:\Users\%USERNAME%\Downloads`.
-2. **Triagem**: Assim que novos arquivos chegam, eles são detectados e validados.
-3. **Padronização**: O arquivo é processado e movido para as pastas de destino configuradas.
-4. **Carga**: O `ImportadorArquivo` lê o Excel e insere os dados no Banco de Dados (MySQL/PostgreSQL).
-5. **Dashboard**: A interface moderna mostra o status dos processos e logs em tempo real.
+## 📂 Estrutura de Pastas
 
-## 📋 Pré-requisitos
+- `backend/`: Código fonte Java da aplicação.
+- `tools/`: Binários locais do JDK e Maven.
+- `prompts/`: Histórico de comandos e instruções utilizadas durante o desenvolvimento.
+- `CHANGELOG.md`: Registro detalhado de todas as modificações realizadas.
 
-- Java JDK 25 (Configurado no script de inicialização)
-- Supabase (PostgreSQL) configurado
-- Estrutura de tabelas criada (ver database/SUPABASE_SETUP.sql)
+## 🔌 Como Iniciar
 
-## 🚀 Como Iniciar
+Basta executar o arquivo:
+`INICIAR_MOTOR.bat` na raiz do projeto.
 
-Apenas execute o arquivo:
-> **start_project.bat**
-
-Este script irá iniciar o backend Java e o dashboard React simultaneamente.
-
-Backend rodando na porta 8080.
-Dashboard rodando na porta 5173.
+---
+*AXIS - O centro da automação.*

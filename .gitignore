@@ -10,3 +10,17 @@ bin/
 *.log
 tools/
 query
+
+# Segurança e Credenciais
+database.properties
+.env
+*.properties
+!src/main/resources/application.properties
+
+# Frontend (Removido)
+frontend/
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
