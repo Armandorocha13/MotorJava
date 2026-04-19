@@ -49,6 +49,87 @@ public class MaquinasService {
         Files.move(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    public void sincronizarConfiguracoes() throws Exception {
+        String caminhoConfig = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\BASE DE DADOS\\config\\configMaquinarios.xlsx";
+        String caminhoBase = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\BASE DE DADOS\\Contagem de dias maquinario.xlsm";
+        
+        ActiveXComponent excel = null;
+        Dispatch wbConfig = null;
+        Dispatch wbBase = null;
+
+        try {
+            logger.accept("Iniciando sincronização de configurações...");
+            excel = new ActiveXComponent("Excel.Application");
+            excel.setProperty("Visible", new Variant(true));
+            excel.setProperty("DisplayAlerts", new Variant(false));
+
+            Dispatch workbooks = excel.getProperty("Workbooks").toDispatch();
+
+            // 1. Abrir base principal e preparar aba CONFIGURAÇÃO
+            logger.accept("Abrindo base principal...");
+            wbBase = Dispatch.call(workbooks, "Open", caminhoBase).toDispatch();
+            Thread.sleep(1000);
+            
+            Dispatch.call(wbBase, "Activate");
+            Dispatch sheets = Dispatch.get(wbBase, "Sheets").toDispatch();
+            int count = Dispatch.get(sheets, "Count").toInt();
+            Dispatch targetSheet = null;
+            
+            for (int i = 1; i <= count; i++) {
+                Dispatch s = Dispatch.call(sheets, "Item", i).toDispatch();
+                String name = Dispatch.get(s, "Name").toString();
+                if (name.toUpperCase().contains("CONFIGURA") && name.toUpperCase().contains("O")) {
+                    targetSheet = s;
+                    break;
+                }
+            }
+
+            if (targetSheet == null) {
+                throw new Exception("Aba 'CONFIGURAÇÃO' não encontrada na planilha principal.");
+            }
+            
+            Dispatch.call(targetSheet, "Select");
+            
+            // Limpar apenas o conteúdo usado para ser menos agressivo
+            logger.accept("Limpando dados antigos da configuração...");
+            try {
+                Dispatch usedRangeTarget = Dispatch.get(targetSheet, "UsedRange").toDispatch();
+                Dispatch.call(usedRangeTarget, "ClearContents");
+            } catch (Exception e) {}
+
+            // 2. Abrir arquivo de configuração e copiar conteúdo
+            logger.accept("Abrindo arquivo de configuração...");
+            wbConfig = Dispatch.call(workbooks, "Open", caminhoConfig).toDispatch();
+            Dispatch sheetsConfig = Dispatch.get(wbConfig, "Sheets").toDispatch();
+            Dispatch sheetConfig = Dispatch.call(sheetsConfig, "Item", 1).toDispatch();
+            Dispatch usedRange = Dispatch.get(sheetConfig, "UsedRange").toDispatch();
+            
+            int rows = Dispatch.get(Dispatch.get(usedRange, "Rows").toDispatch(), "Count").toInt();
+            logger.accept("Novos dados: " + rows + " linhas encontradas.");
+            
+            // Cópia direta para o destino (mais robusto que clipboard)
+            Dispatch rangeA1 = Dispatch.call(targetSheet, "Range", "A1").toDispatch();
+            Dispatch.call(usedRange, "Copy", rangeA1);
+            
+            logger.accept("Configurações sincronizadas com sucesso.");
+
+            // 4. Salvar e Fechar
+            Dispatch.call(wbBase, "Save");
+            Thread.sleep(1000);
+            logger.accept("✓ Configurações sincronizadas com sucesso!");
+
+        } catch (Exception e) {
+            logger.accept("x Erro na sincronização: " + e.getMessage());
+            throw e;
+        } finally {
+            try {
+                if (wbConfig != null) Dispatch.call(wbConfig, "Close", new Variant(false));
+                if (wbBase != null) Dispatch.call(wbBase, "Close", new Variant(true));
+                if (excel != null) excel.invoke("Quit", new Variant[] {});
+            } catch (Exception ex) {}
+        }
+    }
+
     public void atualizarBaseMaquinario() throws Exception {
         String caminhoOriginal = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\BASE DE DADOS\\Contagem de dias maquinario.xlsm";
         String pastaBackup = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\Backup\\";
@@ -83,9 +164,10 @@ public class MaquinasService {
             // SE TRAVAR AQUI, VOCÊ CLICA NO 'OK' DO NOME NO EXCEL
             wb = Dispatch.call(workbooks, "Open", caminhoOriginal).toDispatch();
             
-            logger.accept("Arquivo aberto! Iniciando limpeza automatica de conflitos...");
+            logger.accept("Arquivo aberto! Verificando estrutura...");
 
-            // Limpeza agressiva de nomes internos para que na próxima vez não peça nome
+            // Limpeza de nomes desativada pois pode estar quebrando a macro 'maquinarios'
+            /*
             try {
                 Dispatch namesObj = Dispatch.get(wb, "Names").toDispatch();
                 int count = Dispatch.get(namesObj, "Count").toInt();
@@ -97,21 +179,24 @@ public class MaquinasService {
                 }
                 logger.accept("Limpeza de " + count + " nomes concluída.");
             } catch (Exception e) {}
+            */
 
             // 2.2 GARANTIR QUE ESTÁ NA ABA CORRETA
             Dispatch sheets = Dispatch.get(wb, "Sheets").toDispatch();
             Dispatch targetSheet = Dispatch.call(sheets, "Item", "BASE DE DADOS").toDispatch();
             Dispatch.call(targetSheet, "Select");
+            Dispatch rangeA1 = Dispatch.call(targetSheet, "Range", "A1").toDispatch();
+            Dispatch.call(rangeA1, "Select");
 
             // 3. EXECUTAR A MACRO
             logger.accept("Executando Macro: " + nomeMacro);
             Dispatch.call(excel, "Run", nomeMacro);
-            Thread.sleep(3000);
+            Thread.sleep(5000);
 
             // 4. SALVAR A BASE ORIGINAL (LIMPA E ATUALIZADA)
             logger.accept("Salvando alterações na base original...");
             Dispatch.call(wb, "Save");
-            Thread.sleep(1000);
+            Thread.sleep(2000);
 
             logger.accept("✓ Sucesso: Backup gerado e Base original atualizada!");
             

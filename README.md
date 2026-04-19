@@ -1,34 +1,38 @@
-# AXIS CONTROL - MOTOR JAVA v4.2
+# AXIS CONTROL - MOTOR JAVA v4.5
 
-O **AXIS CONTROL** é uma aplicação desktop nativa desenvolvida em Java para automação de relatórios e processamento de dados via macros Excel (VBA). Esta versão (v4.x) marca a migração completa de uma arquitetura Web/API para uma aplicação local autossuficiente, garantindo maior estabilidade, segurança e performance.
+O **AXIS CONTROL** é uma aplicação desktop nativa desenvolvida em Java para automação de relatórios e processamento de dados via macros Excel (VBA). Esta versão (v4.5) consolida o módulo de **Giro de Maquinários** e uma interface premium baseada em tipografia personalizada.
 
 ## 🚀 Principais Funcionalidades
 
 - **Dashboard Nativo**: Interface gráfica moderna construída com Java Swing e FlatLaf.
 - **Página de Entrada (Splash)**: Tela de boas-vindas com branding exclusivo (Fonte Barrio).
+- **Módulo Giro de Maquinários**: 
+    - **Copiar Seriais**: Ferramenta rápida para copiar centenas de seriais para a área de transferência.
+    - **Sincronização de Configurações**: Escrita direta em planilhas Excel a partir de arquivos externos.
+    - **Processamento Automatizado**: Execução de rotinas VBA complexas com 1 clique.
 - **Automação VBA Silenciosa**: Execução de macros Excel via biblioteca Jacob com supressão total de alertas.
-- **Backup Inteligente**: Geração automática de cópias de segurança com timestamp antes de cada processamento.
-- **Limpeza de Conflitos**: Rotina automática para deletar nomes de intervalos corrompidos ou em conflito no Excel (`_FilterDatabase`).
-- **Design Premium**: Interface minimalista com tema "Light Mode" (Branco e Preto) e cantos arredondados.
+- **Backup Inteligente**: Geração automática de cópias de segurança antes de cada processamento.
+- **Design Premium**: Interface minimalista em Light Mode com tipografia **Quicksand** e **Barrio**.
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Linguagem**: Java 17 (OpenJDK).
 - **Interface (GUI)**: Swing + FlatLaf (Look and Feel).
 - **Automação**: Jacob (Java COM Bridge) para integração com MS Excel.
-- **Gerenciamento**: Apache Maven 3.9.9.
-- **Tipografia**: Barrio (Google Fonts) para identidade visual.
+- **Tipografia**: 
+    - **Barrio**: Logo e Branding (AXIS).
+    - **Quicksand**: Interface global (Textos, botões e controles).
 
 ## 📂 Estrutura de Pastas
 
-- `backend/`: Código fonte Java da aplicação.
+- `backend/`: Código fonte Java e Recursos (Fontes/Imagens).
 - `tools/`: Binários locais do JDK e Maven.
-- `prompts/`: Histórico de comandos e instruções utilizadas durante o desenvolvimento.
-- `CHANGELOG.md`: Registro detalhado de todas as modificações realizadas.
+- `prompts/`: Histórico de evolução e instruções do projeto.
+- `database/`: Conexões e scripts de integração.
 
 ## 🔌 Como Iniciar
 
-Basta executar o arquivo:
+Execute o arquivo:
 `INICIAR_MOTOR.bat` na raiz do projeto.
 
 ---

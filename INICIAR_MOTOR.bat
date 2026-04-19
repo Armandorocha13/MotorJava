@@ -3,7 +3,7 @@ chcp 65001 > nul
 set "ROOT=%~dp0"
 set "JAVA_HOME=%ROOT%tools\jdk-17.0.10+7"
 set "MAVEN_BIN=%ROOT%tools\apache-maven-3.9.9\bin\mvn.cmd"
-set "PATH=%JAVA_HOME%\bin;%PATH%"
+set "PATH=%JAVA_HOME%\bin;%ROOT%tools\lib;%PATH%"
 
 echo ==========================================
 echo       MOTOR JAVA NATIVO - INICIALIZANDO
