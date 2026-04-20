@@ -1,7 +1,7 @@
 package com.motorjava.gui;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 import com.motorjava.service.maquinas.MaquinasService;
 
 import javax.swing.*;
@@ -24,14 +24,14 @@ public class ModernDashboard extends JFrame {
     private CardLayout mainLayout;
     private JPanel mainContainer;
     
-    // Novas Cores: Light Mode (Branco com detalhes em Preto)
-    private final Color bgColor = Color.WHITE;
-    private final Color sidebarColor = new Color(243, 244, 246);
-    private final Color cardColor = Color.WHITE;
-    private final Color primaryColor = Color.BLACK;
-    private final Color textColor = new Color(17, 24, 39);
-    private final Color textSecondary = new Color(107, 114, 128);
-    private final Color successColor = new Color(22, 163, 74);
+    // Novas Cores: Dark Mode (Preto Total)
+    private final Color bgColor = Color.BLACK;
+    private final Color sidebarColor = new Color(18, 18, 18);
+    private final Color cardColor = new Color(18, 18, 18);
+    private final Color primaryColor = Color.WHITE;
+    private final Color textColor = new Color(230, 237, 243);
+    private final Color textSecondary = new Color(139, 148, 158);
+    private final Color successColor = new Color(46, 160, 67);
 
     public ModernDashboard(MaquinasService maquinasService) {
         this.maquinasService = maquinasService;
@@ -52,7 +52,7 @@ public class ModernDashboard extends JFrame {
     }
 
     private void setupUI() {
-        FlatLightLaf.setup(); // Mudar para Tema Claro
+        FlatDarkLaf.setup(); // Mudar para Tema Escuro
         
         // Inicializar Fontes
         Font quicksand = loadFont("Quicksand.ttf", 14f, Font.PLAIN);
@@ -102,7 +102,7 @@ public class ModernDashboard extends JFrame {
         btnAcessar.setPreferredSize(new Dimension(300, 60));
         btnAcessar.setMaximumSize(new Dimension(300, 60));
         btnAcessar.setBackground(primaryColor);
-        btnAcessar.setForeground(Color.WHITE);
+        btnAcessar.setForeground(bgColor);
         btnAcessar.setFont(quicksandButton);
         btnAcessar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnAcessar.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -136,13 +136,22 @@ public class ModernDashboard extends JFrame {
         // Carregar Barrio para o mini logo
         miniLogo.setFont(loadFont("Barrio-Regular.ttf", 18f, Font.PLAIN));
 
-        // Ícone Maquinário (Engrenagem)
-        JButton btnMaq = new JButton("⚙");
+        // Ícone Maquinário (Motor Gerado)
+        JButton btnMaq = new JButton();
         btnMaq.setPreferredSize(new Dimension(50, 50));
-        btnMaq.setMaximumSize(new Dimension(50, 50));
-        btnMaq.setBackground(primaryColor);
-        btnMaq.setForeground(Color.WHITE);
-        btnMaq.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 22));
+        btnMaq.setBackground(sidebarColor);
+        btnMaq.setBorder(null);
+        
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/icons/engine.png"));
+            Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+            btnMaq.setIcon(new ImageIcon(img));
+        } catch (Exception e) {
+            btnMaq.setText("⚙");
+            btnMaq.setForeground(primaryColor);
+            btnMaq.setFont(new Font("Inter", Font.BOLD, 22));
+        }
+        
         btnMaq.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnMaq.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnMaq.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
@@ -188,7 +197,7 @@ public class ModernDashboard extends JFrame {
         cardConfig.setPreferredSize(new Dimension(420, 280));
         cardConfig.setLayout(new BorderLayout());
         cardConfig.setBorder(new EmptyBorder(35, 35, 35, 35));
-        cardConfig.putClientProperty(FlatClientProperties.STYLE, "outline: #E5E7EB; outlineWidth: 1;");
+        cardConfig.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
 
         JPanel cardInConfig = new JPanel();
         cardInConfig.setLayout(new BoxLayout(cardInConfig, BoxLayout.Y_AXIS));
@@ -203,7 +212,7 @@ public class ModernDashboard extends JFrame {
         
         JButton btnCfg = new JButton("SINCRONIZAR CONFIGS");
         btnCfg.setBackground(primaryColor);
-        btnCfg.setForeground(Color.WHITE);
+        btnCfg.setForeground(bgColor);
         btnExecUt(btnCfg);
         btnCfg.addActionListener(this::handleSincronizar);
         
@@ -221,7 +230,7 @@ public class ModernDashboard extends JFrame {
         card.setBorder(new EmptyBorder(35, 35, 35, 35));
         
         // Adicionando borda sutil ao card para fundo branco
-        card.putClientProperty(FlatClientProperties.STYLE, "outline: #E5E7EB; outlineWidth: 1;");
+        card.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
 
         JPanel cardIn = new JPanel();
         cardIn.setLayout(new BoxLayout(cardIn, BoxLayout.Y_AXIS));
@@ -236,7 +245,7 @@ public class ModernDashboard extends JFrame {
         
         JButton btnExec = new JButton("EXECUTAR PROCESSAMENTO");
         btnExec.setBackground(primaryColor);
-        btnExec.setForeground(Color.WHITE);
+        btnExec.setForeground(bgColor);
         btnExecUt(btnExec);
         btnExec.addActionListener(this::handleExecutar);
         
@@ -252,7 +261,7 @@ public class ModernDashboard extends JFrame {
         cardSeriais.setPreferredSize(new Dimension(420, 280));
         cardSeriais.setLayout(new BorderLayout());
         cardSeriais.setBorder(new EmptyBorder(35, 35, 35, 35));
-        cardSeriais.putClientProperty(FlatClientProperties.STYLE, "outline: #E5E7EB; outlineWidth: 1;");
+        cardSeriais.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
 
         JPanel cardInSeriais = new JPanel();
         cardInSeriais.setLayout(new BoxLayout(cardInSeriais, BoxLayout.Y_AXIS));
@@ -267,7 +276,7 @@ public class ModernDashboard extends JFrame {
         
         JButton btnSer = new JButton("COPIAR SERIAIS");
         btnSer.setBackground(primaryColor);
-        btnSer.setForeground(Color.WHITE);
+        btnSer.setForeground(bgColor);
         btnExecUt(btnSer);
         btnSer.addActionListener(this::handleCopiarSeriais);
         
@@ -289,11 +298,11 @@ public class ModernDashboard extends JFrame {
         logBox.setOpaque(false);
         logBox.setPreferredSize(new Dimension(0, 200));
         
-        RoundedPanel logBg = new RoundedPanel(16, new Color(249, 250, 251));
+        RoundedPanel logBg = new RoundedPanel(16, new Color(18, 18, 18));
         logBg.setLayout(new BorderLayout());
         logBg.setBorder(new EmptyBorder(15, 20, 15, 20));
         logArea = new JTextArea();
-        logArea.setBackground(new Color(249, 250, 251));
+        logArea.setBackground(new Color(18, 18, 18));
         logArea.setForeground(textColor);
         logArea.setFont(loadFont("Quicksand.ttf", 12f, Font.PLAIN));
         logArea.setEditable(false);
