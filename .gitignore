@@ -9,6 +9,9 @@ bin/
 *.iml
 *.log
 tools/
+!tools/lib/
+!tools/lib/*.dll
+!backend/src/main/resources/fonts/
 query
 
 # Segurança e Credenciais
