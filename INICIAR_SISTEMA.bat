@@ -16,10 +16,18 @@ if not exist "%JAVA_HOME%\bin\java.exe" (
     exit /b
 )
 
-echo [MOTOR] Abrindo Dashboard Nativo...
+echo [MOTOR] Verificando compilacao...
 cd /d "%ROOT%"
-call "%MAVEN_BIN%" install -DskipTests -am -pl motor-nucleo
-call "%MAVEN_BIN%" exec:java -pl motor-nucleo
+
+:: Se o 'target' do nucleo ja existe, pula o install para abrir instantaneamente
+if exist "motor-nucleo\target\classes" (
+    echo [MOTOR] Iniciando modo rapido...
+    call "%MAVEN_BIN%" exec:java -pl motor-nucleo -o
+) else (
+    echo [MOTOR] Primeira inicializacao detectada. Compilando...
+    call "%MAVEN_BIN%" install -DskipTests -am -pl motor-nucleo
+    call "%MAVEN_BIN%" exec:java -pl motor-nucleo
+)
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

@@ -28,7 +28,8 @@ Este documento lista os principais conceitos, tecnologias e padrões de arquitet
 ## 5. Manipulação de Dados e Arquivos
 *   **Apache POI**: Leitura e escrita direta em arquivos `.xlsx` sem necessidade de abrir o Excel (processamento em memória).
 *   **NIO.2 (java.nio.file)**: Manipulação moderna de arquivos, cópias, movimentação e backups.
-*   **Logging**: Implementação de áreas de log em tempo real na interface para feedback ao usuário.
+*   **Logging sob demanda**: Implementação de pop-ups (`JDialog`) para exibição de logs detalhados, mantendo a interface principal limpa.
+*   **Feedback em tempo real**: Uso de `SwingWorker` e `JProgressBar` para reportar o progresso de tarefas longas sem travar a UI.
 
 ---
 

@@ -8,14 +8,14 @@ O **AXIS CONTROL** é um ecossistema de automação desktop desenvolvido em Java
 - Interface premium construída com **Java Swing** e **FlatLaf**.
 - Design em **Dark Mode** total (Preto/Cinza escuro).
 - Tipografia moderna (**Quicksand** e **Barrio**).
-- Gerenciamento centralizado de logs e execução de processos.
+- **UX Consistente**: Todos os módulos utilizam cards centralizados, progresso local e logs em pop-up.
 
 ### 🤖 Automações (automacoes/)
 
 #### 1. Giro de Maquinários (giro-maquinario)
 - **Sincronização de Configurações**: Escrita direta em planilhas via Jacob.
 - **Processamento de Base**: Execução automatizada de macros VBA (`maquinarios`).
-- **Giro de Estoque**: Integração com Power BI para visualização de resultados.
+- **Design Unificado**: Cards centralizados com barras de progresso e logs independentes.
 - **Backup Automático**: Geração de backups datados antes de qualquer modificação.
 
 #### 2. Consumo IHS (consumo-ihs)

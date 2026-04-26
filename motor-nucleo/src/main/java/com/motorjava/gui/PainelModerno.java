@@ -18,7 +18,6 @@ import java.util.Date;
 
 public class PainelModerno extends JFrame {
 
-    private JTextArea logArea;
     private final ServicoMaquinas maquinasService;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     
@@ -30,7 +29,9 @@ public class PainelModerno extends JFrame {
     private JLabel titleLabel;
     private JButton btnHeaderAction;
 
-    private JPanel logBoxContainer;
+    private JProgressBar barMaqConfig, barMaqExec, barMaqSeriais;
+    private JDialog dialogoLogsMaq;
+    private JTextArea areaLogsMaq;
     
     // Novas Cores: Dark Mode (Preto Total)
     private final Color bgColor = Color.BLACK;
@@ -144,45 +145,9 @@ public class PainelModerno extends JFrame {
         // Carregar Barrio para o mini logo
         miniLogo.setFont(loadFont("Barrio-Regular.ttf", 18f, Font.PLAIN));
 
-        // Ícone Maquinário (Motor Gerado)
-        JButton btnMaq = new JButton();
-        btnMaq.setPreferredSize(new Dimension(50, 50));
-        btnMaq.setBackground(sidebarColor);
-        btnMaq.setBorder(null);
-        
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/icons/engine.png"));
-            Image img = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
-            btnMaq.setIcon(new ImageIcon(img));
-        } catch (Exception e) {
-            btnMaq.setText("⚙");
-            btnMaq.setForeground(primaryColor);
-            btnMaq.setFont(new Font("Inter", Font.BOLD, 22));
-        }
-        
-        btnMaq.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnMaq.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnMaq.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
-
-        // Ícone Consumo IHS (Novo)
-        JButton btnIhs = new JButton();
-        btnIhs.setPreferredSize(new Dimension(50, 50));
-        btnIhs.setBackground(sidebarColor);
-        btnIhs.setBorder(null);
-        
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/icons/chart.png")); // Vou usar o chart.png que removi ou similar
-            Image img = icon.getImage().getScaledInstance(35, 35, Image.SCALE_SMOOTH);
-            btnIhs.setIcon(new ImageIcon(img));
-        } catch (Exception e) {
-            btnIhs.setText("📊");
-            btnIhs.setForeground(primaryColor);
-            btnIhs.setFont(new Font("Inter", Font.BOLD, 22));
-        }
-        
-        btnIhs.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnIhs.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnIhs.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+        // Botões da Barra Lateral
+        JButton btnMaq = criarBotaoLateral("/icons/engine.png", "⚙");
+        JButton btnIhs = criarBotaoLateral("/icons/upload.png", "▲");
 
         sidebar.add(miniLogo);
         sidebar.add(btnMaq);
@@ -197,7 +162,7 @@ public class PainelModerno extends JFrame {
         
         JPanel contentArea = new JPanel(new BorderLayout(0, 30));
         contentArea.setBackground(bgColor);
-        contentArea.setBorder(new EmptyBorder(40, 50, 40, 50));
+        contentArea.setBorder(new EmptyBorder(40, 30, 40, 30));
         
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
@@ -264,36 +229,7 @@ public class PainelModerno extends JFrame {
         
         contentArea.add(moduleContainer, BorderLayout.CENTER);
         
-        logBoxContainer = new JPanel(new BorderLayout());
-        logBoxContainer.setOpaque(false);
-        logBoxContainer.setPreferredSize(new Dimension(0, 180));
-        
-        RoundedPanel logBg = new RoundedPanel(16, sidebarColor);
-        logBg.setLayout(new BorderLayout());
-        logBg.setBorder(new EmptyBorder(10, 15, 10, 15));
-        logBg.putClientProperty(FlatClientProperties.STYLE, "outline: #222222; outlineWidth: 1;");
-
-        logArea = new JTextArea();
-        logArea.setBackground(sidebarColor);
-        logArea.setForeground(textColor);
-        logArea.setFont(loadFont("Quicksand.ttf", 12f, Font.PLAIN));
-        logArea.setEditable(false);
-        logArea.setLineWrap(true);
-        logArea.setWrapStyleWord(true);
-        
-        JScrollPane scroll = new JScrollPane(logArea);
-        scroll.setBorder(null);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
-        logBg.add(scroll);
-        
-        JLabel logTitle = new JLabel("CONSOLE DE LOGS");
-        logTitle.setForeground(textSecondary);
-        logTitle.setFont(loadFont("Quicksand.ttf", 10f, Font.BOLD));
-        logTitle.setBorder(new EmptyBorder(0, 0, 5, 0));
-        
-        logBoxContainer.add(logTitle, BorderLayout.NORTH);
-        logBoxContainer.add(logBg, BorderLayout.CENTER);
-        contentArea.add(logBoxContainer, BorderLayout.SOUTH);
+        // logBoxContainer removido pois agora usamos log em pop-up
         
         system.add(sidebar, BorderLayout.WEST);
         system.add(contentArea, BorderLayout.CENTER);
@@ -305,110 +241,132 @@ public class PainelModerno extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
 
-        // --- CARD 1: CONFIGURAÇÃO ---
-        RoundedPanel cardConfig = new RoundedPanel(24, cardColor);
-        cardConfig.setPreferredSize(new Dimension(420, 280));
-        cardConfig.setLayout(new BorderLayout());
-        cardConfig.setBorder(new EmptyBorder(35, 35, 35, 35));
-        cardConfig.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
-
-        JPanel cardInConfig = new JPanel();
-        cardInConfig.setLayout(new BoxLayout(cardInConfig, BoxLayout.Y_AXIS));
-        cardInConfig.setOpaque(false);
-        
-        JLabel cardTitleCfg = new JLabel("Configurar Maquinários");
-        cardTitleCfg.setForeground(textColor);
-        cardTitleCfg.setFont(loadFont("Quicksand.ttf", 22f, Font.BOLD));
-        JLabel cardDescCfg = new JLabel("<html>Sincroniza as definições de configurações com a planilha.<br>Copia dados de configMaquinarios para a base.</html>");
-        cardDescCfg.setForeground(textSecondary);
-        cardDescCfg.setFont(loadFont("Quicksand.ttf", 14f, Font.PLAIN));
-        
-        JButton btnCfg = new JButton("SINCRONIZAR CONFIGS");
-        btnCfg.setBackground(primaryColor);
-        btnCfg.setForeground(bgColor);
-        btnExecUt(btnCfg);
-        btnCfg.addActionListener(this::handleSincronizar);
-        
-        cardInConfig.add(cardTitleCfg);
-        cardInConfig.add(Box.createVerticalStrut(10));
-        cardInConfig.add(cardDescCfg);
-        cardInConfig.add(Box.createVerticalGlue());
-        cardInConfig.add(btnCfg);
-        cardConfig.add(cardInConfig);
-
-        // --- CARD 2: ATUALIZAR TABELAS ---
-        RoundedPanel card = new RoundedPanel(24, cardColor);
-        card.setPreferredSize(new Dimension(420, 280));
-        card.setLayout(new BorderLayout());
-        card.setBorder(new EmptyBorder(35, 35, 35, 35));
-        card.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
-
-        JPanel cardIn = new JPanel();
-        cardIn.setLayout(new BoxLayout(cardIn, BoxLayout.Y_AXIS));
-        cardIn.setOpaque(false);
-        
-        JLabel cardTitle = new JLabel("Atualizar Tabelas");
-        cardTitle.setForeground(textColor);
-        cardTitle.setFont(loadFont("Quicksand.ttf", 22f, Font.BOLD));
-        JLabel cardDesc = new JLabel("<html>Sincroniza os arquivos de Downloads com a Base Original.<br>Inclui limpeza automática de conflitos no Excel.</html>");
-        cardDesc.setForeground(textSecondary);
-        cardDesc.setFont(loadFont("Quicksand.ttf", 14f, Font.PLAIN));
-        
-        JButton btnExec = new JButton("EXECUTAR PROCESSAMENTO");
-        btnExec.setBackground(primaryColor);
-        btnExec.setForeground(bgColor);
-        btnExecUt(btnExec);
-        btnExec.addActionListener(this::handleExecutar);
-        
-        cardIn.add(cardTitle);
-        cardIn.add(Box.createVerticalStrut(10));
-        cardIn.add(cardDesc);
-        cardIn.add(Box.createVerticalGlue());
-        cardIn.add(btnExec);
-        card.add(cardIn);
-        
-        // --- CARD 3: COPIAR SERIAIS ---
-        RoundedPanel cardSeriais = new RoundedPanel(24, cardColor);
-        cardSeriais.setPreferredSize(new Dimension(420, 280));
-        cardSeriais.setLayout(new BorderLayout());
-        cardSeriais.setBorder(new EmptyBorder(35, 35, 35, 35));
-        cardSeriais.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
-
-        JPanel cardInSeriais = new JPanel();
-        cardInSeriais.setLayout(new BoxLayout(cardInSeriais, BoxLayout.Y_AXIS));
-        cardInSeriais.setOpaque(false);
-        
-        JLabel cardTitleSer = new JLabel("Copiar Seriais");
-        cardTitleSer.setForeground(textColor);
-        cardTitleSer.setFont(loadFont("Quicksand.ttf", 22f, Font.BOLD));
-        JLabel cardDescSer = new JLabel("<html>Copia a lista completa de seriais para a área de transferência.<br>Útil para consultas rápidas no portal.</html>");
-        cardDescSer.setForeground(textSecondary);
-        cardDescSer.setFont(loadFont("Quicksand.ttf", 14f, Font.PLAIN));
-        
-        JButton btnSer = new JButton("COPIAR SERIAIS");
-        btnSer.setBackground(primaryColor);
-        btnSer.setForeground(bgColor);
-        btnExecUt(btnSer);
+        // --- CARDS ---
+        barMaqSeriais = criarBarraCard();
+        JButton btnSer = criarBotaoCard("COPIAR SERIAIS");
         btnSer.addActionListener(this::handleCopiarSeriais);
-        
-        cardInSeriais.add(cardTitleSer);
-        cardInSeriais.add(Box.createVerticalStrut(10));
-        cardInSeriais.add(cardDescSer);
-        cardInSeriais.add(Box.createVerticalGlue());
-        cardInSeriais.add(btnSer);
-        cardSeriais.add(cardInSeriais);
+        JPanel cardSeriais = createMaqCard("Copiar Seriais", "Copia a lista completa de seriais para a área de transferência.", btnSer, barMaqSeriais);
 
-        JPanel grid = new JPanel(new GridLayout(1, 3, 20, 20));
+        barMaqConfig = criarBarraCard();
+        JButton btnCfg = criarBotaoCard("SINCRONIZAR CONFIGS");
+        btnCfg.addActionListener(this::handleSincronizar);
+        JPanel cardConfig = createMaqCard("Configurar Maquinários", "Sincroniza as definições de configurações com a planilha.", btnCfg, barMaqConfig);
+
+        barMaqExec = criarBarraCard();
+        JButton btnExec = criarBotaoCard("EXECUTAR PROCESSAMENTO");
+        btnExec.addActionListener(this::handleExecutar);
+        JPanel cardExec = createMaqCard("Atualizar Tabelas", "Sincroniza os arquivos de Downloads com a Base Original.", btnExec, barMaqExec);
+
+        JPanel grid = new JPanel(new GridLayout(1, 3, 30, 0));
         grid.setOpaque(false);
         grid.add(cardSeriais);
         grid.add(cardConfig);
-        grid.add(card);
+        grid.add(cardExec);
         
-        panel.add(grid, BorderLayout.CENTER);
+        // Container para o Grid que permite expansão horizontal mas não vertical
+        JPanel mainArea = new JPanel(new BorderLayout());
+        mainArea.setOpaque(false);
+        mainArea.add(grid, BorderLayout.NORTH);
+        
+        panel.add(mainArea, BorderLayout.CENTER);
+
+        // BOTAO DE LOG MAQUINARIO (Rodapé)
+        configurarLogsMaq();
+        JButton btnLogMaq = new JButton("LOG");
+        btnLogMaq.setFont(loadFont("Quicksand.ttf", 10f, Font.BOLD));
+        btnLogMaq.setPreferredSize(new Dimension(70, 30));
+        btnLogMaq.setBackground(cardColor);
+        btnLogMaq.setForeground(textSecondary);
+        btnLogMaq.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogMaq.putClientProperty(FlatClientProperties.STYLE, "arc: 10; outline: #333333; outlineWidth: 1;");
+        btnLogMaq.addActionListener(e -> {
+            dialogoLogsMaq.setLocationRelativeTo(this);
+            dialogoLogsMaq.setVisible(true);
+        });
+
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(20, 0, 0, 0));
+
+        JPanel logWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        logWrapper.setOpaque(false);
+        logWrapper.add(btnLogMaq);
+        footer.add(logWrapper, BorderLayout.SOUTH);
+        
+        panel.add(footer, BorderLayout.SOUTH);
+
         return panel;
     }
 
+    private JPanel createMaqCard(String title, String desc, JButton btn, JProgressBar bar) {
+        JPanel card = new JPanel();
+        card.setPreferredSize(new Dimension(0, 260)); // Altura fixa, largura dinâmica
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(cardColor);
+        card.setBorder(new EmptyBorder(25, 25, 25, 25));
+        card.putClientProperty(FlatClientProperties.STYLE, "arc: 20; outline: #333333; outlineWidth: 1;");
 
+        JLabel lt = new JLabel(title);
+        lt.setForeground(textColor);
+        lt.setFont(loadFont("Quicksand.ttf", 18f, Font.BOLD));
+        lt.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel ld = new JLabel("<html><div style='text-align: center;'>" + desc + "</div></html>");
+        ld.setForeground(textSecondary);
+        ld.setFont(loadFont("Quicksand.ttf", 13f, Font.PLAIN));
+        ld.setAlignmentX(Component.CENTER_ALIGNMENT);
+        ld.setBorder(new EmptyBorder(8, 0, 12, 0));
+
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        bar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        bar.setMaximumSize(new Dimension(240, 6));
+        bar.setVisible(false);
+
+        card.add(lt);
+        card.add(ld);
+        card.add(Box.createVerticalGlue());
+        card.add(btn);
+        card.add(Box.createVerticalStrut(12));
+        card.add(bar);
+
+        return card;
+    }
+
+    private JButton criarBotaoCard(String text) {
+        JButton btn = new JButton(text);
+        btn.setBackground(primaryColor);
+        btn.setForeground(bgColor);
+        btn.setPreferredSize(new Dimension(240, 45));
+        btn.setMaximumSize(new Dimension(240, 45));
+        btn.setFont(loadFont("Quicksand.ttf", 13f, Font.BOLD));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+        return btn;
+    }
+
+    private void configurarLogsMaq() {
+        dialogoLogsMaq = new JDialog(this, "Logs de Processamento - Maquinário", false);
+        dialogoLogsMaq.setSize(600, 400);
+        dialogoLogsMaq.getContentPane().setBackground(sidebarColor);
+
+        areaLogsMaq = new JTextArea();
+        areaLogsMaq.setEditable(false);
+        areaLogsMaq.setFont(new Font("Consolas", Font.PLAIN, 12));
+        areaLogsMaq.setBackground(sidebarColor);
+        areaLogsMaq.setForeground(textColor);
+        areaLogsMaq.setBorder(new EmptyBorder(15, 15, 15, 15));
+        
+        JScrollPane scroll = new JScrollPane(areaLogsMaq);
+        scroll.setBorder(null);
+        dialogoLogsMaq.add(scroll);
+    }
+
+    private JProgressBar criarBarraCard() {
+        JProgressBar p = new JProgressBar(0, 100);
+        p.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+        return p;
+    }
 
     private void showModule(String module) {
         moduleLayout.show(moduleContainer, module);
@@ -417,13 +375,11 @@ public class PainelModerno extends JFrame {
             titleLabel.setText("GIRO DE MAQUINÁRIOS");
             btnHeaderAction.setText("ABRIR RELATÓRIO");
             btnHeaderAction.setVisible(true);
-            logBoxContainer.setVisible(true);
         } else if (module.equals("CONSUMO_IHS")) {
             moduleNameLabel.setText("AUTOMAÇÃO");
             titleLabel.setText("CONSUMO IHS");
             btnHeaderAction.setText("VER RESULTADO HTML");
             btnHeaderAction.setVisible(false); // PainelConsumoIHS tem seus próprios botões
-            logBoxContainer.setVisible(false); 
         }
         revalidate();
         repaint();
@@ -437,47 +393,130 @@ public class PainelModerno extends JFrame {
         btn.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
     }
 
-    private void handleCopiarSeriais(ActionEvent e) {
-        String seriais = getSeriaisList();
-        StringSelection selection = new StringSelection(seriais);
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(selection, selection);
+    private JButton criarBotaoLateral(String iconPath, String fallback) {
+        JButton b = new JButton();
+        b.setPreferredSize(new Dimension(50, 50));
+        b.setMinimumSize(new Dimension(50, 50));
+        b.setMaximumSize(new Dimension(50, 50));
+        b.setBackground(sidebarColor);
+        b.setBorder(null);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setAlignmentX(Component.CENTER_ALIGNMENT);
+        b.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
         
-        addLog("✓ Sucesso: Seriais copiados para a área de transferência.", "success");
-        JOptionPane.showMessageDialog(this, "SERIAIS COPIADOS", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+        try {
+            java.net.URL url = getClass().getResource(iconPath);
+            if (url != null) {
+                ImageIcon icon = new ImageIcon(url);
+                Image img = icon.getImage().getScaledInstance(35, 35, Image.SCALE_SMOOTH);
+                b.setIcon(new ImageIcon(img));
+            } else {
+                throw new Exception("Icon not found");
+            }
+        } catch (Exception e) {
+            b.setText(fallback);
+            b.setForeground(primaryColor);
+            b.setFont(new Font("Inter", Font.BOLD, 22));
+        }
+        return b;
+    }
+
+    private void addLogMaq(String msg, String type) {
+        String time = dateFormat.format(new Date());
+        areaLogsMaq.append("[" + time + "] " + msg + "\n");
+        areaLogsMaq.setCaretPosition(areaLogsMaq.getDocument().getLength());
+        addLog(msg, type); // Mantém log no sistema também por segurança
+    }
+
+    private void handleCopiarSeriais(ActionEvent e) {
+        barMaqSeriais.setValue(0);
+        barMaqSeriais.setVisible(true);
+        addLogMaq("▶ Gerando lista de seriais...", "info");
+
+        new SwingWorker<Void, Integer>() {
+            @Override protected Void doInBackground() throws Exception {
+                publish(30);
+                String seriais = getSeriaisList();
+                StringSelection selection = new StringSelection(seriais);
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(selection, selection);
+                publish(100);
+                return null;
+            }
+            @Override protected void process(java.util.List<Integer> chunks) {
+                barMaqSeriais.setValue(chunks.get(chunks.size() - 1));
+            }
+            @Override protected void done() {
+                addLogMaq("✔ Seriais copiados para o clipboard!", "success");
+                JOptionPane.showMessageDialog(PainelModerno.this, "Seriais copiados com sucesso!");
+            }
+        }.execute();
     }
 
     private void handleSincronizar(ActionEvent e) {
-        new Thread(() -> {
-            try {
-                addLog("Iniciando sincronização de configurações...", "info");
+        barMaqConfig.setValue(0);
+        barMaqConfig.setVisible(true);
+        addLogMaq("▶ Iniciando sincronização de configurações...", "info");
+
+        new SwingWorker<Void, Integer>() {
+            @Override protected Void doInBackground() throws Exception {
+                publish(20);
                 maquinasService.sincronizarConfiguracoes();
-                addLog("✓ Sucesso: Configurações sincronizadas.", "success");
-            } catch (Exception ex) {
-                addLog("✖ Falha: " + ex.getMessage(), "error");
+                publish(100);
+                return null;
             }
-        }).start();
+            @Override protected void process(java.util.List<Integer> chunks) {
+                barMaqConfig.setValue(chunks.get(chunks.size() - 1));
+            }
+            @Override protected void done() {
+                try {
+                    get();
+                    barMaqConfig.setValue(100);
+                    addLogMaq("✔ Sincronização concluída!", "success");
+                    JOptionPane.showMessageDialog(PainelModerno.this, "Configurações sincronizadas!");
+                } catch (Exception ex) {
+                    addLogMaq("✖ Falha na sincronização: " + ex.getMessage(), "error");
+                    barMaqConfig.setValue(0);
+                    JOptionPane.showMessageDialog(PainelModerno.this, "Erro: " + ex.getMessage());
+                }
+            }
+        }.execute();
     }
 
     private void handleExecutar(ActionEvent e) {
-        new Thread(() -> {
-            try {
-                addLog("Iniciando rotina de processamento local...", "info");
+        barMaqExec.setValue(0);
+        barMaqExec.setVisible(true);
+        addLogMaq("▶ Iniciando rotina de processamento local...", "info");
+        
+        new SwingWorker<Void, Integer>() {
+            @Override protected Void doInBackground() throws Exception {
+                publish(10);
                 maquinasService.atualizarBaseMaquinario();
-                addLog("✓ Sucesso: Base e backup atualizados.", "success");
-            } catch (Exception ex) {
-                addLog("✖ Falha: " + ex.getMessage(), "error");
+                publish(100);
+                return null;
             }
-        }).start();
+            @Override protected void process(java.util.List<Integer> chunks) {
+                barMaqExec.setValue(chunks.get(chunks.size() - 1));
+            }
+            @Override protected void done() {
+                try {
+                    get();
+                    barMaqExec.setValue(100);
+                    addLogMaq("✔ Base e backup atualizados com sucesso!", "success");
+                    JOptionPane.showMessageDialog(PainelModerno.this, "Processamento concluído!");
+                } catch (Exception ex) {
+                    addLogMaq("✖ Falha no processamento: " + ex.getMessage(), "error");
+                    barMaqExec.setValue(0);
+                    JOptionPane.showMessageDialog(PainelModerno.this, "Erro: " + ex.getMessage());
+                }
+            }
+        }.execute();
     }
 
 
     public void addLog(String msg, String type) {
-        String time = dateFormat.format(new Date());
-        SwingUtilities.invokeLater(() -> {
-            logArea.append(String.format("[%s] %s\n", time, msg));
-            logArea.setCaretPosition(logArea.getDocument().getLength());
-        });
+        // Log para o console padrão removido da GUI, mas mantido no System.out
+        System.out.println(String.format("[%s] [%s] %s", dateFormat.format(new Date()), type.toUpperCase(), msg));
     }
 
     private static class RoundedPanel extends JPanel {

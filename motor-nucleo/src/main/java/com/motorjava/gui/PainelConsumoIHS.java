@@ -130,6 +130,17 @@ public class PainelConsumoIHS extends JPanel {
         btnVerExcel.addActionListener(e -> abrir(CAMINHO_EXCEL));
     }
 
+    private Font loadFont(String name, float size, int style) {
+        try {
+            java.io.InputStream is = getClass().getResourceAsStream("/fonts/" + name);
+            if (is != null) {
+                Font f = Font.createFont(Font.TRUETYPE_FONT, is);
+                return f.deriveFont(style, size);
+            }
+        } catch (Exception e) {}
+        return new Font("sans-serif", style, (int)size);
+    }
+
     private JPanel createCard(String t, String d, JButton b, JProgressBar p) {
         JPanel c = new JPanel();
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
@@ -139,17 +150,19 @@ public class PainelConsumoIHS extends JPanel {
 
         JLabel lt = new JLabel(t); 
         lt.setForeground(primaryColor); 
-        lt.setFont(new Font("Quicksand", Font.BOLD, 24));
+        lt.setFont(loadFont("Quicksand.ttf", 24f, Font.BOLD));
         lt.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         JLabel ld = new JLabel("<html><div style='text-align: center;'>" + d + "</div></html>"); 
         ld.setForeground(textSecondary);
-        ld.setFont(new Font("Quicksand", Font.PLAIN, 15));
+        ld.setFont(loadFont("Quicksand.ttf", 15f, Font.PLAIN));
         ld.setAlignmentX(Component.CENTER_ALIGNMENT);
         ld.setMaximumSize(new Dimension(300, 100));
         ld.setBorder(new EmptyBorder(15, 0, 35, 0));
         
         b.setAlignmentX(Component.CENTER_ALIGNMENT);
+        b.setFont(loadFont("Quicksand.ttf", 15f, Font.BOLD));
+        
         p.setAlignmentX(Component.CENTER_ALIGNMENT);
         p.setMaximumSize(new Dimension(220, 10));
         p.setVisible(false);
@@ -176,7 +189,6 @@ public class PainelConsumoIHS extends JPanel {
         b.setMaximumSize(new Dimension(220, 55));
         b.setBackground(primaryColor);
         b.setForeground(bgColor);
-        b.setFont(new Font("Quicksand", Font.BOLD, 15));
         b.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
