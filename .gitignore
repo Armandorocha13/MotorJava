@@ -8,10 +8,10 @@ bin/
 .idea/
 *.iml
 *.log
-tools/
-!tools/lib/
-!tools/lib/*.dll
-!backend/src/main/resources/fonts/
+ferramentas/
+!ferramentas/lib/
+!ferramentas/lib/*.dll
+!motor-nucleo/src/main/resources/fonts/
 query
 
 # Segurança e Credenciais

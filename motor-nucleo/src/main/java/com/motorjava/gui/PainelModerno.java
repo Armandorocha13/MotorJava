@@ -2,7 +2,7 @@ package com.motorjava.gui;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatDarkLaf;
-import com.motorjava.service.maquinas.MaquinasService;
+import com.motorjava.service.maquinas.ServicoMaquinas;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -16,14 +16,21 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class ModernDashboard extends JFrame {
+public class PainelModerno extends JFrame {
 
     private JTextArea logArea;
-    private final MaquinasService maquinasService;
+    private final ServicoMaquinas maquinasService;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     
     private CardLayout mainLayout;
     private JPanel mainContainer;
+    private CardLayout moduleLayout;
+    private JPanel moduleContainer;
+    private JLabel moduleNameLabel;
+    private JLabel titleLabel;
+    private JButton btnHeaderAction;
+
+    private JPanel logBoxContainer;
     
     // Novas Cores: Dark Mode (Preto Total)
     private final Color bgColor = Color.BLACK;
@@ -34,7 +41,7 @@ public class ModernDashboard extends JFrame {
     private final Color textSecondary = new Color(139, 148, 158);
     private final Color successColor = new Color(46, 160, 67);
 
-    public ModernDashboard(MaquinasService maquinasService) {
+    public PainelModerno(ServicoMaquinas maquinasService) {
         this.maquinasService = maquinasService;
         setupUI();
     }
@@ -159,6 +166,11 @@ public class ModernDashboard extends JFrame {
         
         sidebar.add(miniLogo);
         sidebar.add(btnMaq);
+        sidebar.add(Box.createVerticalStrut(15));
+        
+
+        // Ações de Navegação
+        btnMaq.addActionListener(e -> showModule("MAQUINARIO"));
         
         JPanel contentArea = new JPanel(new BorderLayout(0, 30));
         contentArea.setBackground(bgColor);
@@ -169,34 +181,35 @@ public class ModernDashboard extends JFrame {
         
         JPanel titlePanel = new JPanel(new GridLayout(2, 1));
         titlePanel.setOpaque(false);
-        JLabel moduleName = new JLabel("RELATÓRIO");
-        moduleName.setForeground(textSecondary);
-        moduleName.setFont(loadFont("Quicksand.ttf", 12f, Font.BOLD));
+        moduleNameLabel = new JLabel("RELATÓRIO");
+        moduleNameLabel.setForeground(textSecondary);
+        moduleNameLabel.setFont(loadFont("Quicksand.ttf", 12f, Font.BOLD));
         JPanel nameActionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         nameActionPanel.setOpaque(false);
 
-        JLabel title = new JLabel("GIRO DE MAQUINÁRIOS");
-        title.setForeground(textColor);
-        title.setFont(loadFont("Quicksand.ttf", 36f, Font.BOLD));
+        titleLabel = new JLabel("GIRO DE MAQUINÁRIOS");
+        titleLabel.setForeground(textColor);
+        titleLabel.setFont(loadFont("Quicksand.ttf", 36f, Font.BOLD));
         
-        JButton btnAbrir = new JButton("ABRIR RELATÓRIO");
-        btnAbrir.setFont(loadFont("Quicksand.ttf", 10f, Font.BOLD));
-        btnAbrir.setBackground(cardColor);
-        btnAbrir.setForeground(textColor);
-        btnAbrir.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnAbrir.putClientProperty(FlatClientProperties.STYLE, "arc: 12; outline: #333333; outlineWidth: 1;");
-        btnAbrir.addActionListener(e -> {
+        btnHeaderAction = new JButton("ABRIR RELATÓRIO");
+        btnHeaderAction.setFont(loadFont("Quicksand.ttf", 10f, Font.BOLD));
+        btnHeaderAction.setBackground(cardColor);
+        btnHeaderAction.setForeground(textColor);
+        btnHeaderAction.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnHeaderAction.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+        btnHeaderAction.addActionListener(e -> {
             try {
-                Desktop.getDesktop().open(new File("C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\POWERBI\\GIRO DE ESTOQUE DE MAQUINARIO.pbix"));
+                String pbiPath = com.motorjava.config.GerenciadorConfiguracao.get("path.pbi.giro");
+                Desktop.getDesktop().open(new File(pbiPath));
             } catch (Exception ex) {
                 addLog("✖ Falha ao abrir relatório: " + ex.getMessage(), "error");
             }
         });
 
-        nameActionPanel.add(title);
-        nameActionPanel.add(btnAbrir);
+        nameActionPanel.add(titleLabel);
+        nameActionPanel.add(btnHeaderAction);
 
-        titlePanel.add(moduleName);
+        titlePanel.add(moduleNameLabel);
         titlePanel.add(nameActionPanel);
         header.add(titlePanel, BorderLayout.WEST);
         
@@ -214,6 +227,55 @@ public class ModernDashboard extends JFrame {
         
         contentArea.add(header, BorderLayout.NORTH);
         
+        moduleLayout = new CardLayout();
+        moduleContainer = new JPanel(moduleLayout);
+        moduleContainer.setOpaque(false);
+        
+        moduleContainer.add(createMaquinarioPanel(), "MAQUINARIO");
+        
+        contentArea.add(moduleContainer, BorderLayout.CENTER);
+        
+        logBoxContainer = new JPanel(new BorderLayout());
+        logBoxContainer.setOpaque(false);
+        logBoxContainer.setPreferredSize(new Dimension(0, 180));
+        
+        RoundedPanel logBg = new RoundedPanel(16, sidebarColor);
+        logBg.setLayout(new BorderLayout());
+        logBg.setBorder(new EmptyBorder(10, 15, 10, 15));
+        logBg.putClientProperty(FlatClientProperties.STYLE, "outline: #222222; outlineWidth: 1;");
+
+        logArea = new JTextArea();
+        logArea.setBackground(sidebarColor);
+        logArea.setForeground(textColor);
+        logArea.setFont(loadFont("Quicksand.ttf", 12f, Font.PLAIN));
+        logArea.setEditable(false);
+        logArea.setLineWrap(true);
+        logArea.setWrapStyleWord(true);
+        
+        JScrollPane scroll = new JScrollPane(logArea);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+        logBg.add(scroll);
+        
+        JLabel logTitle = new JLabel("CONSOLE DE LOGS");
+        logTitle.setForeground(textSecondary);
+        logTitle.setFont(loadFont("Quicksand.ttf", 10f, Font.BOLD));
+        logTitle.setBorder(new EmptyBorder(0, 0, 5, 0));
+        
+        logBoxContainer.add(logTitle, BorderLayout.NORTH);
+        logBoxContainer.add(logBg, BorderLayout.CENTER);
+        contentArea.add(logBoxContainer, BorderLayout.SOUTH);
+        
+        system.add(sidebar, BorderLayout.WEST);
+        system.add(contentArea, BorderLayout.CENTER);
+        
+        return system;
+    }
+
+    private JPanel createMaquinarioPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+
         // --- CARD 1: CONFIGURAÇÃO ---
         RoundedPanel cardConfig = new RoundedPanel(24, cardColor);
         cardConfig.setPreferredSize(new Dimension(420, 280));
@@ -245,13 +307,11 @@ public class ModernDashboard extends JFrame {
         cardInConfig.add(btnCfg);
         cardConfig.add(cardInConfig);
 
-        // --- CARD 2: ATUALIZAR TABELAS (EXISTENTE) ---
+        // --- CARD 2: ATUALIZAR TABELAS ---
         RoundedPanel card = new RoundedPanel(24, cardColor);
         card.setPreferredSize(new Dimension(420, 280));
         card.setLayout(new BorderLayout());
         card.setBorder(new EmptyBorder(35, 35, 35, 35));
-        
-        // Adicionando borda sutil ao card para fundo branco
         card.putClientProperty(FlatClientProperties.STYLE, "outline: #333333; outlineWidth: 1;");
 
         JPanel cardIn = new JPanel();
@@ -309,35 +369,29 @@ public class ModernDashboard extends JFrame {
         cardInSeriais.add(btnSer);
         cardSeriais.add(cardInSeriais);
 
-        JPanel centerGrid = new JPanel(new GridLayout(1, 3, 20, 0));
-        centerGrid.setOpaque(false);
-        centerGrid.add(cardSeriais);
-        centerGrid.add(cardConfig);
-        centerGrid.add(card);
-        contentArea.add(centerGrid, BorderLayout.CENTER);
+        JPanel grid = new JPanel(new GridLayout(1, 3, 20, 20));
+        grid.setOpaque(false);
+        grid.add(cardSeriais);
+        grid.add(cardConfig);
+        grid.add(card);
         
-        JPanel logBox = new JPanel(new BorderLayout());
-        logBox.setOpaque(false);
-        logBox.setPreferredSize(new Dimension(0, 200));
-        
-        RoundedPanel logBg = new RoundedPanel(16, new Color(18, 18, 18));
-        logBg.setLayout(new BorderLayout());
-        logBg.setBorder(new EmptyBorder(15, 20, 15, 20));
-        logArea = new JTextArea();
-        logArea.setBackground(new Color(18, 18, 18));
-        logArea.setForeground(textColor);
-        logArea.setFont(loadFont("Quicksand.ttf", 12f, Font.PLAIN));
-        logArea.setEditable(false);
-        JScrollPane scroll = new JScrollPane(logArea);
-        scroll.setBorder(null);
-        logBg.add(scroll);
-        logBox.add(logBg, BorderLayout.CENTER);
-        contentArea.add(logBox, BorderLayout.SOUTH);
-        
-        system.add(sidebar, BorderLayout.WEST);
-        system.add(contentArea, BorderLayout.CENTER);
-        
-        return system;
+        panel.add(grid, BorderLayout.CENTER);
+        return panel;
+    }
+
+
+
+    private void showModule(String module) {
+        moduleLayout.show(moduleContainer, module);
+        if (module.equals("MAQUINARIO")) {
+            moduleNameLabel.setText("RELATÓRIO");
+            titleLabel.setText("GIRO DE MAQUINÁRIOS");
+            btnHeaderAction.setText("ABRIR RELATÓRIO");
+            btnHeaderAction.setVisible(true);
+            logBoxContainer.setVisible(true);
+        }
+        revalidate();
+        repaint();
     }
 
     private void btnExecUt(JButton btn) {
@@ -381,6 +435,7 @@ public class ModernDashboard extends JFrame {
             }
         }).start();
     }
+
 
     public void addLog(String msg, String type) {
         String time = dateFormat.format(new Date());

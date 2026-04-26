@@ -4,45 +4,40 @@ Este documento lista os principais conceitos, tecnologias e padrões de arquitet
 
 ---
 
-## 1. Linguagem e Ambiente
-*   **Java 17 (OpenJDK)**: Uso das funcionalidades modernas do Java para backend e lógica de processamento.
-*   **Maven**: Gerenciamento de dependências e automação de build.
-*   **Programação Orientada a Objetos (POO)**: Organização do código em classes, interfaces e separação de responsabilidades (GUI, Service, Core, Config).
+## 1. Arquitetura Modular e Maven
+*   **Maven Multi-Module**: Organização do projeto em múltiplos sub-módulos (`app-core`, `automation`, etc.). Isso permite separar a interface da lógica de automação, facilitando a manutenção e testes.
+*   **POM Pai (Parent POM)**: Uso de um arquivo central para gerenciar versões de dependências e configurações de build para todo o projeto.
+*   **Gerenciamento de Dependências**: Como o Maven resolve e baixa bibliotecas externas automaticamente.
 
-## 2. Interface Gráfica (GUI)
-*   **Java Swing**: Framework nativo do Java para construção de interfaces desktop.
-*   **FlatLaf**: Biblioteca de "Look and Feel" que moderniza o Swing, permitindo temas como Dark Mode e Light Mode com design premium.
-*   **Tipografia Customizada**: Integração de fontes externas (Google Fonts como *Quicksand* e *Barrio*) diretamente no projeto Java.
-*   **Design UX/UI**: Criação de layouts responsivos, dashboards com cards, e feedback visual para o usuário.
+## 2. Interface Gráfica (GUI) Avançada
+*   **Java Swing & FlatLaf**: Uso do framework nativo com temas modernos (Dark Mode).
+*   **CardLayout**: Técnica para trocar de telas dentro da mesma janela (Navegação entre Dashboard e Automações).
+*   **Tipografia Dinâmica**: Carregamento de fontes `.ttf` como recursos do projeto.
+*   **Thread Safety no Swing**: Uso de `SwingUtilities.invokeLater` para atualizar a interface a partir de processos em segundo plano (evitando travamentos).
 
-## 3. Automação e Integração
-*   **JACOB (Java COM Bridge)**: Tecnologia avançada para permitir que o Java "fale" com o Microsoft Excel via API COM do Windows.
-*   **VBA (Visual Basic for Applications)**: Criação e execução de macros dentro do Excel para processamento pesado de dados.
-*   **Execução Silenciosa**: Técnicas para rodar processos em segundo plano sem alertas ou janelas intrusivas para o usuário.
+## 3. Automação de Processos (RPA em Java)
+*   **JACOB (Java COM Bridge)**: Integração profunda com o Microsoft Office para controlar o Excel programaticamente.
+*   **Execução de Macros VBA**: Como disparar funções escritas em VBA diretamente do Java.
+*   **Processos Subjacentes**: Uso de `ProcessBuilder` para disparar scripts `.bat` ou outros binários independentes.
 
-## 4. Persistência e Dados
-*   **MySQL / JDBC**: Conexão com banco de dados relacional para armazenamento e consulta de informações.
-*   **Manipulação de Arquivos (I/O)**: Leitura e escrita de arquivos de configuração, logs e arquivos externos para sincronização com planilhas.
-*   **Sincronização de Dados**: Lógica para ler dados de uma fonte e escrever em posições específicas dentro de um arquivo Excel.
+## 4. Configuração e Portabilidade
+*   **Externalized Configuration**: Uso de arquivos `.properties` fora do código para gerenciar caminhos de arquivos e parâmetros do sistema.
+*   **JDK/Maven Portátil**: Como configurar um projeto para rodar em qualquer máquina sem necessidade de instalação prévia do Java no sistema.
+*   **System Properties**: Uso de variáveis como `${user.home}` para criar caminhos dinâmicos que funcionam em diferentes usuários.
 
-## 5. Web e Comunicação
-*   **Serviços HTTP**: Consumo de APIs externas para integração com outros sistemas ou serviços web.
-*   **Monitoramento**: Implementação de mecanismos de "heartbeat" para verificar a saúde do backend.
-
-## 6. Scripts e Ferramentas do Windows
-*   **Arquivos .BAT**: Automação da inicialização do ambiente Java e da aplicação.
-*   **Arquivos .VBS**: Execução de scripts silenciosos para melhorar a experiência do usuário (evitando telas pretas de terminal).
-*   **Backup Estruturado**: Lógica de segurança para duplicar arquivos críticos antes de operações de escrita.
+## 5. Manipulação de Dados e Arquivos
+*   **Apache POI**: Leitura e escrita direta em arquivos `.xlsx` sem necessidade de abrir o Excel (processamento em memória).
+*   **NIO.2 (java.nio.file)**: Manipulação moderna de arquivos, cópias, movimentação e backups.
+*   **Logging**: Implementação de áreas de log em tempo real na interface para feedback ao usuário.
 
 ---
 
 ## Sugestão de Ordem de Estudo:
-1.  **Fundamentos de Java** (Sintaxe, Classes, Métodos).
-2.  **Swing Básico** (Janelas, Botões, Layouts).
-3.  **FlatLaf** (Temas e customização visual).
-4.  **Manipulação de Arquivos e Excel** (JACOB e Macros).
-5.  **Banco de Dados** (MySQL e JDBC).
-6.  **Arquitetura** (Como separar o código em camadas).
+1.  **Fundamentos de Java** (Sintaxe e POO).
+2.  **Maven** (Estrutura de pastas e o arquivo pom.xml).
+3.  **Swing & Layout Managers** (Como montar telas que não quebram ao redimensionar).
+4.  **Integração COM/Jacob** (Entender como o Windows expõe o Excel para o Java).
+5.  **Configurações e Propriedades** (Como tornar seu software flexível e fácil de configurar).
 
 ---
-*Este projeto é um exemplo prático de como o Java pode ser poderoso para criar soluções que unem o mundo corporativo (Excel/VBA) com o desenvolvimento moderno de software.*
+*Este projeto é um laboratório prático de Engenharia de Software aplicada a automação corporativa.*

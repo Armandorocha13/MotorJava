@@ -1,24 +1,24 @@
 package com.motorjava;
 
-import com.motorjava.gui.ModernDashboard;
-import com.motorjava.service.maquinas.MaquinasService;
+import com.motorjava.gui.PainelModerno;
+import com.motorjava.service.maquinas.ServicoMaquinas;
 import javax.swing.SwingUtilities;
 
 /**
  * MOTOR JAVA - NATIVE APPLICATION
  * Local entry point for the automation system.
  */
-public class MainApp {
+public class AppPrincipal {
     public static void main(String[] args) {
         // Logger compartilhado para o console e GUI
         java.util.function.Consumer<String> logger = msg -> System.out.println("[MOTOR] " + msg);
 
         // Inicialização dos Serviços
-        MaquinasService maquinasService = new MaquinasService(logger);
+        ServicoMaquinas maquinasService = new ServicoMaquinas(logger);
 
         // Launch GUI
         SwingUtilities.invokeLater(() -> {
-            ModernDashboard dashboard = new ModernDashboard(maquinasService);
+            PainelModerno dashboard = new PainelModerno(maquinasService);
             dashboard.setVisible(true);
         });
         
