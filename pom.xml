@@ -24,6 +24,7 @@
     <modules>
         <module>motor-nucleo</module>
         <module>automacoes/giro-maquinario</module>
+        <module>automacoes/consumo-ihs</module>
     </modules>
 
 

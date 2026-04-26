@@ -7,9 +7,10 @@ Este documento registra as instruções principais fornecidas pelo usuário para
 ... (itens anteriores mantidos) ...
 
 18. **Modularização**: "Organize a estrutura de pastas do projeto, otimize e garante que tudo funcione perfeitamente."
-19. **Separação de Automações**: "separe as automacoes, em uma pasta chamada automation e com as pastas para cada tipo de automacao de relatorio dentro, por exemplo uma pasta para a automacao do giro de maquinario e outra para o consumo ihs"
+19. **Separação de Automações**: "separe as automacoes, em uma pasta chamada automacoes e com as pastas para cada tipo de automacao de relatorio dentro."
 20. **Dark Mode Premium**: "Troque a cor do projeto para preto com detalhes em branco" (Refletido na v5.0).
-21. **Externalização de Caminhos**: Implementação de `config/settings.properties` para remover caminhos "hardcoded".
+21. **Integração IHS**: "coloque o consumo ihs finalizado dentro do nosso projeo... criar um modulo novo com icone e tudo mais."
+22. **Design Minimalista**: "remove o console do axis no modulo consumo ihs... centraliza os botoes dos cards e exiba barra de carregamento individual."
 
 ## 📌 Decisões de Design e Arquitetura (v5.0)
 

@@ -18,6 +18,13 @@ O **AXIS CONTROL** é um ecossistema de automação desktop desenvolvido em Java
 - **Giro de Estoque**: Integração com Power BI para visualização de resultados.
 - **Backup Automático**: Geração de backups datados antes de qualquer modificação.
 
+#### 2. Consumo IHS (consumo-ihs)
+- **Interface de Cartões**: Design minimalista com foco em ações rápidas.
+- **Normalização Excel**: Limpeza e padronização de abas da planilha IHS.
+- **Consolidação Aniel**: Cruzamento de dados entre base IHS e Pesquisa Aniel.
+- **Saída Multi-formato**: Geração automática de relatórios em HTML e Excel.
+- **Logs Independentes**: Acesso detalhado ao console via botão pop-up.
+
 
 ## 🛠️ Tecnologias Utilizadas
 

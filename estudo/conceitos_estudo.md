@@ -5,9 +5,9 @@ Este documento lista os principais conceitos, tecnologias e padrões de arquitet
 ---
 
 ## 1. Arquitetura Modular e Maven
-*   **Maven Multi-Module**: Organização do projeto em múltiplos sub-módulos (`app-core`, `automation`, etc.). Isso permite separar a interface da lógica de automação, facilitando a manutenção e testes.
-*   **POM Pai (Parent POM)**: Uso de um arquivo central para gerenciar versões de dependências e configurações de build para todo o projeto.
-*   **Gerenciamento de Dependências**: Como o Maven resolve e baixa bibliotecas externas automaticamente.
+*   **Maven Multi-Module**: Organização do projeto em sub-módulos específicos (`motor-nucleo`, `automacoes/giro-maquinario`, `automacoes/consumo-ihs`). Isso permite isolar a lógica de cada automação e manter o núcleo do sistema independente.
+*   **POM Pai (Parent POM)**: Uso de um arquivo central para gerenciar versões de dependências (POI, FlatLaf, etc.) e a estrutura de build para todos os módulos.
+*   **Gerenciamento de Dependências**: Utilização do Maven para resolver bibliotecas externas e bibliotecas internas (o núcleo depende dos módulos de automação).
 
 ## 2. Interface Gráfica (GUI) Avançada
 *   **Java Swing & FlatLaf**: Uso do framework nativo com temas modernos (Dark Mode).

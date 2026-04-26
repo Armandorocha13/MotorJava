@@ -163,14 +163,37 @@ public class PainelModerno extends JFrame {
         btnMaq.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnMaq.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnMaq.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+
+        // Ícone Consumo IHS (Novo)
+        JButton btnIhs = new JButton();
+        btnIhs.setPreferredSize(new Dimension(50, 50));
+        btnIhs.setBackground(sidebarColor);
+        btnIhs.setBorder(null);
         
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/icons/chart.png")); // Vou usar o chart.png que removi ou similar
+            Image img = icon.getImage().getScaledInstance(35, 35, Image.SCALE_SMOOTH);
+            btnIhs.setIcon(new ImageIcon(img));
+        } catch (Exception e) {
+            btnIhs.setText("📊");
+            btnIhs.setForeground(primaryColor);
+            btnIhs.setFont(new Font("Inter", Font.BOLD, 22));
+        }
+        
+        btnIhs.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnIhs.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnIhs.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
+
         sidebar.add(miniLogo);
         sidebar.add(btnMaq);
+        sidebar.add(Box.createVerticalStrut(15));
+        sidebar.add(btnIhs);
         sidebar.add(Box.createVerticalStrut(15));
         
 
         // Ações de Navegação
         btnMaq.addActionListener(e -> showModule("MAQUINARIO"));
+        btnIhs.addActionListener(e -> showModule("CONSUMO_IHS"));
         
         JPanel contentArea = new JPanel(new BorderLayout(0, 30));
         contentArea.setBackground(bgColor);
@@ -199,7 +222,12 @@ public class PainelModerno extends JFrame {
         btnHeaderAction.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
         btnHeaderAction.addActionListener(e -> {
             try {
-                String pbiPath = com.motorjava.config.GerenciadorConfiguracao.get("path.pbi.giro");
+                String pbiPath = "";
+                if (titleLabel.getText().contains("GIRO")) {
+                    pbiPath = com.motorjava.config.GerenciadorConfiguracao.get("path.pbi.giro");
+                } else {
+                    pbiPath = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\EXCEL\\ConsumoIHS\\html_output\\CONSOLIDACAO_PADRAO_ANIEL.html";
+                }
                 Desktop.getDesktop().open(new File(pbiPath));
             } catch (Exception ex) {
                 addLog("✖ Falha ao abrir relatório: " + ex.getMessage(), "error");
@@ -232,6 +260,7 @@ public class PainelModerno extends JFrame {
         moduleContainer.setOpaque(false);
         
         moduleContainer.add(createMaquinarioPanel(), "MAQUINARIO");
+        moduleContainer.add(new PainelConsumoIHS(), "CONSUMO_IHS");
         
         contentArea.add(moduleContainer, BorderLayout.CENTER);
         
@@ -389,6 +418,12 @@ public class PainelModerno extends JFrame {
             btnHeaderAction.setText("ABRIR RELATÓRIO");
             btnHeaderAction.setVisible(true);
             logBoxContainer.setVisible(true);
+        } else if (module.equals("CONSUMO_IHS")) {
+            moduleNameLabel.setText("AUTOMAÇÃO");
+            titleLabel.setText("CONSUMO IHS");
+            btnHeaderAction.setText("VER RESULTADO HTML");
+            btnHeaderAction.setVisible(false); // PainelConsumoIHS tem seus próprios botões
+            logBoxContainer.setVisible(false); 
         }
         revalidate();
         repaint();
