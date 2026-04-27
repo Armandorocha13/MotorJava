@@ -8,22 +8,26 @@ import java.awt.*;
 import java.io.File;
 import java.util.function.BiConsumer;
 
+/**
+ * Painel de Automação para o Módulo de Consumo IHS.
+ * Traduzido e seguindo princípios de POO.
+ */
 public class PainelConsumoIHS extends JPanel {
 
     private JTextArea areaLogs;
     private JDialog dialogoLogs;
-    private JProgressBar barNormalizar, barConsolidar;
+    private JProgressBar barraNormalizar, barraConsolidar;
     private JButton btnNormalizar, btnConsolidar, btnVerHtml, btnVerExcel, btnLog;
 
-    // Cores (Consistentes com o Axis)
-    private final Color bgColor = Color.BLACK;
-    private final Color sidebarColor = new Color(18, 18, 18);
-    private final Color cardColor = new Color(18, 18, 18);
-    private final Color textColor = new Color(230, 237, 243);
-    private final Color textSecondary = new Color(139, 148, 158);
-    private final Color primaryColor = Color.WHITE;
+    // Cores do Sistema
+    private final Color corFundo = Color.BLACK;
+    private final Color corBarraLateral = new Color(18, 18, 18);
+    private final Color corCard = new Color(18, 18, 18);
+    private final Color corTexto = new Color(230, 237, 243);
+    private final Color corTextoSecundario = new Color(139, 148, 158);
+    private final Color corPrimaria = Color.WHITE;
 
-    // Caminhos
+    // Caminhos de Arquivo
     private static final String PASTA_RAIZ = "C:\\Users\\user\\Desktop\\ARQUVOS\\RELATORIOS\\EXCEL\\ConsumoIHS\\";
     private static final String CAMINHO_BASE = PASTA_RAIZ + "CONSUMO IHS.xlsx";
     private static final String CAMINHO_HTML = PASTA_RAIZ + "html_output\\CONSOLIDACAO_PADRAO_ANIEL.html";
@@ -31,20 +35,19 @@ public class PainelConsumoIHS extends JPanel {
 
     public PainelConsumoIHS() {
         configurarLogs();
-        setupUI();
+        configurarInterface();
     }
 
     private void configurarLogs() {
-        // O diálogo de logs continua sendo um pop-up para não poluir a tela principal
         dialogoLogs = new JDialog((Frame)null, "Logs de Processamento - IHS", false);
         dialogoLogs.setSize(600, 400);
-        dialogoLogs.getContentPane().setBackground(sidebarColor);
+        dialogoLogs.getContentPane().setBackground(corBarraLateral);
 
         areaLogs = new JTextArea();
         areaLogs.setEditable(false);
         areaLogs.setFont(new Font("Consolas", Font.PLAIN, 12));
-        areaLogs.setBackground(sidebarColor);
-        areaLogs.setForeground(textColor);
+        areaLogs.setBackground(corBarraLateral);
+        areaLogs.setForeground(corTexto);
         areaLogs.setBorder(new EmptyBorder(15, 15, 15, 15));
         
         JScrollPane scroll = new JScrollPane(areaLogs);
@@ -52,52 +55,49 @@ public class PainelConsumoIHS extends JPanel {
         dialogoLogs.add(scroll);
     }
 
-    private void setupUI() {
+    private void configurarInterface() {
         setLayout(new BorderLayout(0, 0));
         setOpaque(false);
 
-        // --- CENTRO ---
-        JPanel main = new JPanel(new BorderLayout(0, 40));
-        main.setOpaque(false);
-        main.setBorder(new EmptyBorder(20, 0, 30, 0));
+        JPanel principal = new JPanel(new BorderLayout(0, 40));
+        principal.setOpaque(false);
+        principal.setBorder(new EmptyBorder(20, 0, 30, 0));
 
-        // CARDS
         JPanel grid = new JPanel(new GridLayout(1, 2, 30, 0));
         grid.setOpaque(false);
         
-        barNormalizar = criarBarraProgresso();
+        barraNormalizar = criarBarraProgresso();
         btnNormalizar = criarBotao("EXECUTAR LIMPEZA");
-        grid.add(createCard("Normalização", "Limpa e prepara a planilha base para o processamento.", 
-            btnNormalizar, barNormalizar));
+        grid.add(criarCard("Normalização", "Limpa e prepara a planilha base para o processamento.", 
+            btnNormalizar, barraNormalizar));
         
-        barConsolidar = criarBarraProgresso();
+        barraConsolidar = criarBarraProgresso();
         btnConsolidar = criarBotao("GERAR RELATÓRIOS");
         btnConsolidar.setEnabled(false);
-        grid.add(createCard("Consolidação", "Gera relatórios padronizados Aniel em HTML e Excel.", 
-            btnConsolidar, barConsolidar));
+        grid.add(criarCard("Consolidação", "Gera relatórios padronizados Aniel em HTML e Excel.", 
+            btnConsolidar, barraConsolidar));
 
-        main.add(grid, BorderLayout.NORTH);
+        principal.add(grid, BorderLayout.NORTH);
 
-        // BOTÕES DE RESULTADO + LOG
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setOpaque(false);
+        JPanel rodape = new JPanel(new BorderLayout());
+        rodape.setOpaque(false);
 
-        JPanel results = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        results.setOpaque(false);
+        JPanel resultados = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        resultados.setOpaque(false);
         btnVerHtml = criarBotao("VER HTML");
         btnVerExcel = criarBotao("VER EXCEL");
         btnVerHtml.setEnabled(false);
         btnVerExcel.setEnabled(false);
-        results.add(btnVerHtml);
-        results.add(btnVerExcel);
+        resultados.add(btnVerHtml);
+        resultados.add(btnVerExcel);
         
-        footer.add(results, BorderLayout.CENTER);
+        rodape.add(resultados, BorderLayout.CENTER);
 
         btnLog = new JButton("LOG");
         btnLog.setFont(new Font("Quicksand", Font.BOLD, 10));
         btnLog.setPreferredSize(new Dimension(70, 30));
-        btnLog.setBackground(cardColor);
-        btnLog.setForeground(textSecondary);
+        btnLog.setBackground(corCard);
+        btnLog.setForeground(corTextoSecundario);
         btnLog.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnLog.putClientProperty(FlatClientProperties.STYLE, "arc: 10; outline: #333333; outlineWidth: 1;");
         btnLog.addActionListener(e -> {
@@ -108,73 +108,72 @@ public class PainelConsumoIHS extends JPanel {
         JPanel logWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         logWrapper.setOpaque(false);
         logWrapper.add(btnLog);
-        footer.add(logWrapper, BorderLayout.SOUTH);
+        rodape.add(logWrapper, BorderLayout.SOUTH);
 
-        main.add(footer, BorderLayout.SOUTH);
-
-        add(main, BorderLayout.CENTER);
+        principal.add(rodape, BorderLayout.SOUTH);
+        add(principal, BorderLayout.CENTER);
 
         // --- EVENTOS ---
-        btnNormalizar.addActionListener(e -> executar("Processando Limpeza...", barNormalizar, (r) -> {
+        btnNormalizar.addActionListener(e -> executarProcesso("Processando Limpeza...", barraNormalizar, (r) -> {
             MotorProcessamento.normalizarExcel(CAMINHO_BASE, r);
         }, () -> btnConsolidar.setEnabled(true)));
 
-        btnConsolidar.addActionListener(e -> executar("Consolidando Dados...", barConsolidar, (r) -> {
+        btnConsolidar.addActionListener(e -> executarProcesso("Consolidando Dados...", barraConsolidar, (r) -> {
             MotorProcessamento.consolidarDados(CAMINHO_BASE, r);
         }, () -> {
             btnVerHtml.setEnabled(true);
             btnVerExcel.setEnabled(true);
         }));
 
-        btnVerHtml.addActionListener(e -> abrir(CAMINHO_HTML));
-        btnVerExcel.addActionListener(e -> abrir(CAMINHO_EXCEL));
+        btnVerHtml.addActionListener(e -> abrirArquivo(CAMINHO_HTML));
+        btnVerExcel.addActionListener(e -> abrirArquivo(CAMINHO_EXCEL));
     }
 
-    private Font loadFont(String name, float size, int style) {
+    private Font carregarFonte(String nome, float tamanho, int estilo) {
         try {
-            java.io.InputStream is = getClass().getResourceAsStream("/fonts/" + name);
+            java.io.InputStream is = getClass().getResourceAsStream("/fonts/" + nome);
             if (is != null) {
                 Font f = Font.createFont(Font.TRUETYPE_FONT, is);
-                return f.deriveFont(style, size);
+                return f.deriveFont(estilo, tamanho);
             }
         } catch (Exception e) {}
-        return new Font("sans-serif", style, (int)size);
+        return new Font("sans-serif", estilo, (int)tamanho);
     }
 
-    private JPanel createCard(String t, String d, JButton b, JProgressBar p) {
-        JPanel c = new JPanel();
-        c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
-        c.setBackground(cardColor);
-        c.setBorder(new EmptyBorder(40, 40, 40, 40));
-        c.putClientProperty(FlatClientProperties.STYLE, "arc: 24; outline: #333333; outlineWidth: 1;");
+    private JPanel criarCard(String titulo, String desc, JButton botao, JProgressBar barra) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(corCard);
+        card.setBorder(new EmptyBorder(40, 40, 40, 40));
+        card.putClientProperty(FlatClientProperties.STYLE, "arc: 24; outline: #333333; outlineWidth: 1;");
 
-        JLabel lt = new JLabel(t); 
-        lt.setForeground(primaryColor); 
-        lt.setFont(loadFont("Quicksand.ttf", 24f, Font.BOLD));
+        JLabel lt = new JLabel(titulo); 
+        lt.setForeground(corPrimaria); 
+        lt.setFont(carregarFonte("Quicksand.ttf", 24f, Font.BOLD));
         lt.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JLabel ld = new JLabel("<html><div style='text-align: center;'>" + d + "</div></html>"); 
-        ld.setForeground(textSecondary);
-        ld.setFont(loadFont("Quicksand.ttf", 15f, Font.PLAIN));
+        JLabel ld = new JLabel("<html><div style='text-align: center;'>" + desc + "</div></html>"); 
+        ld.setForeground(corTextoSecundario);
+        ld.setFont(carregarFonte("Quicksand.ttf", 15f, Font.PLAIN));
         ld.setAlignmentX(Component.CENTER_ALIGNMENT);
         ld.setMaximumSize(new Dimension(300, 100));
         ld.setBorder(new EmptyBorder(15, 0, 35, 0));
         
-        b.setAlignmentX(Component.CENTER_ALIGNMENT);
-        b.setFont(loadFont("Quicksand.ttf", 15f, Font.BOLD));
+        botao.setAlignmentX(Component.CENTER_ALIGNMENT);
+        botao.setFont(carregarFonte("Quicksand.ttf", 15f, Font.BOLD));
         
-        p.setAlignmentX(Component.CENTER_ALIGNMENT);
-        p.setMaximumSize(new Dimension(220, 10));
-        p.setVisible(false);
+        barra.setAlignmentX(Component.CENTER_ALIGNMENT);
+        barra.setMaximumSize(new Dimension(220, 10));
+        barra.setVisible(false);
         
-        c.add(lt); 
-        c.add(ld);
-        c.add(Box.createVerticalGlue()); 
-        c.add(b);
-        c.add(Box.createVerticalStrut(15));
-        c.add(p);
+        card.add(lt); 
+        card.add(ld);
+        card.add(Box.createVerticalGlue()); 
+        card.add(botao);
+        card.add(Box.createVerticalStrut(15));
+        card.add(barra);
         
-        return c;
+        return card;
     }
 
     private JProgressBar criarBarraProgresso() {
@@ -183,40 +182,41 @@ public class PainelConsumoIHS extends JPanel {
         return p;
     }
 
-    private JButton criarBotao(String txt) {
-        JButton b = new JButton(txt);
+    private JButton criarBotao(String texto) {
+        JButton b = new JButton(texto);
         b.setPreferredSize(new Dimension(220, 55));
         b.setMaximumSize(new Dimension(220, 55));
-        b.setBackground(primaryColor);
-        b.setForeground(bgColor);
+        b.setBackground(corPrimaria);
+        b.setForeground(corFundo);
         b.putClientProperty(FlatClientProperties.STYLE, "arc: 12;");
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
 
-    private void executar(String msg, JProgressBar cardBar, Acao r, Runnable done) {
-        btnNormalizar.setEnabled(false); btnConsolidar.setEnabled(false);
-        cardBar.setValue(0);
-        cardBar.setVisible(true);
+    private void executarProcesso(String titulo, JProgressBar barraCard, AcaoProcessamento acao, Runnable finalizacao) {
+        btnNormalizar.setEnabled(false); 
+        btnConsolidar.setEnabled(false);
+        barraCard.setValue(0);
+        barraCard.setVisible(true);
         
         areaLogs.setText("");
-        new SwingWorker<Void, Step>() {
+        new SwingWorker<Void, PassoProcesso>() {
             @Override protected Void doInBackground() throws Exception {
-                r.exec((m, p) -> publish(new Step(m, p))); return null;
+                acao.executar((msg, progresso) -> publish(new PassoProcesso(msg, progresso))); 
+                return null;
             }
-            @Override protected void process(java.util.List<Step> steps) {
-                Step s = steps.get(steps.size()-1);
-                cardBar.setValue(s.p);
-                registrarLog(s.m);
+            @Override protected void process(java.util.List<PassoProcesso> passos) {
+                PassoProcesso p = passos.get(passos.size()-1);
+                barraCard.setValue(p.progresso);
+                registrarLog(p.mensagem);
             }
             @Override protected void done() {
                 try { 
                     get(); 
-                    cardBar.setValue(100);
-                    done.run(); 
-                }
-                catch (Exception e) { 
-                    cardBar.setValue(0);
+                    barraCard.setValue(100);
+                    finalizacao.run(); 
+                } catch (Exception e) { 
+                    barraCard.setValue(0);
                     registrarLog("ERRO: " + e.getMessage());
                 }
                 btnNormalizar.setEnabled(true);
@@ -225,12 +225,27 @@ public class PainelConsumoIHS extends JPanel {
     }
 
     private void registrarLog(String msg) {
-        String time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-        areaLogs.append("[" + time + "] " + msg + "\n");
+        String tempo = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        areaLogs.append("[" + tempo + "] " + msg + "\n");
         areaLogs.setCaretPosition(areaLogs.getDocument().getLength());
     }
 
-    private void abrir(String p) { try { Desktop.getDesktop().open(new File(p)); } catch (Exception e) {} }
-    @FunctionalInterface interface Acao { void exec(BiConsumer<String, Integer> r) throws Exception; }
-    private static class Step { String m; int p; Step(String m, int p) { this.m = m; this.p = p; } }
+    private void abrirArquivo(String caminho) { 
+        try { 
+            Desktop.getDesktop().open(new File(caminho)); 
+        } catch (Exception e) {
+            registrarLog("Erro ao abrir arquivo: " + e.getMessage());
+        } 
+    }
+
+    @FunctionalInterface 
+    interface AcaoProcessamento { 
+        void executar(BiConsumer<String, Integer> rastreador) throws Exception; 
+    }
+
+    private static class PassoProcesso { 
+        String mensagem; 
+        int progresso; 
+        PassoProcesso(String m, int p) { this.mensagem = m; this.progresso = p; } 
+    }
 }

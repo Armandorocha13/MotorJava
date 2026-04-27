@@ -183,12 +183,12 @@ public class MotorProcessamento {
             if (status.contains("não") || status.contains("nao")) deveIncluir = true;
             else if (status.contains("sim") && posicao.contains("aplicado")) {
                 InformacaoOS info = mapaBase.get(os);
-                if (info != null && info.dataModificacao != null && dataAniel != null && dataAniel.before(info.dataModificacao)) deveIncluir = true;
+                if (info != null && info.getDataModificacao() != null && dataAniel != null && dataAniel.before(info.getDataModificacao())) deveIncluir = true;
             }
 
             if (deveIncluir) {
                 InformacaoOS info = mapaBase.get(os);
-                String nomeSvc = (info != null) ? info.nomeServico.toUpperCase().trim() : "";
+                String nomeSvc = (info != null) ? info.getNomeServico().toUpperCase().trim() : "";
                 String idSvc = dePara.getOrDefault(nomeSvc, "");
                 String matricula = extrairValorCelula(linha.getCell(23));
                 String uf = equipes.getOrDefault(matricula, "SP");

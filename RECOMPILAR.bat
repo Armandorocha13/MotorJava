@@ -1,18 +1,15 @@
 @echo off
-chcp 65001 > nul
-set "ROOT=%~dp0"
-set "MAVEN_BIN=%ROOT%ferramentas\apache-maven-3.9.9\bin\mvn.cmd"
-set "JAVA_HOME=%ROOT%ferramentas\jdk-17.0.10+7"
-set "PATH=%JAVA_HOME%\bin;%PATH%"
+:: Recompilar o AXIS usando caminhos diretos
 
-echo ==========================================
-2: echo       MOTOR JAVA - MODO RECOMPILACAO
-echo ==========================================
-echo [MOTOR] Limpando e instalando todos os modulos...
+set JAVA_HOME=%~dp0ferramentas\jdk-17.0.10+7
+cd /d "%~dp0"
 
-cd /d "%ROOT%"
-call "%MAVEN_BIN%" clean install -DskipTests
+echo [AXIS] Recompilando projeto...
+call "%~dp0ferramentas\apache-maven-3.9.9\bin\mvn.cmd" clean install -DskipTests
+
+echo [AXIS] Preparando bibliotecas...
+call "%~dp0ferramentas\apache-maven-3.9.9\bin\mvn.cmd" dependency:copy-dependencies -pl motor-nucleo -DincludeScope=runtime
 
 echo.
-echo [SUCESSO] Projeto recompilado. Agora voce pode usar o INICIAR_SISTEMA.bat normalmente.
+echo [SUCESSO] Projeto pronto. Use o INICIAR_SISTEMA para abrir rapido.
 pause

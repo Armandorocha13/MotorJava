@@ -5,24 +5,24 @@ import com.motorjava.service.maquinas.ServicoMaquinas;
 import javax.swing.SwingUtilities;
 
 /**
- * MOTOR JAVA - NATIVE APPLICATION
- * Local entry point for the automation system.
+ * NÚCLEO DO MOTOR - APLICAÇÃO NATIVA
+ * Ponto de entrada local para o sistema de automação.
  */
-public class AppPrincipal {
+public class NucleoMotor {
     public static void main(String[] args) {
-        // Logger compartilhado para o console e GUI
+        // Logger compartilhado para o console e interface gráfica
         java.util.function.Consumer<String> logger = msg -> System.out.println("[MOTOR] " + msg);
 
         // Inicialização dos Serviços
-        ServicoMaquinas maquinasService = new ServicoMaquinas(logger);
+        ServicoMaquinas servicoMaquinas = new ServicoMaquinas(logger);
 
-        // Launch GUI
+        // Iniciar Interface Gráfica
         SwingUtilities.invokeLater(() -> {
-            PainelModerno dashboard = new PainelModerno(maquinasService);
+            PainelModerno dashboard = new PainelModerno(servicoMaquinas);
             dashboard.setVisible(true);
         });
         
-        System.out.println("MOTOR JAVA SYSTEM v4.0 - NATIVE CORE RE-INITIALIZED");
+        System.out.println("SISTEMA MOTOR JAVA v4.0 - NÚCLEO NATIVO REINICIALIZADO");
     }
 }
 
